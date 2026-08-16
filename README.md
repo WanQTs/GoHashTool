@@ -5,35 +5,36 @@
 # 文件哈希工具 · File Hash Tool
 
 **Windows 64 位桌面文件哈希工具：计算 · 校验 · 对比 · 批量清单验证**
-**A fast Windows 64-bit desktop tool to compute, verify and compare file hashes.**
 
 [![Release](https://img.shields.io/github/v/release/WanQTs/GoHashTool)](https://github.com/WanQTs/GoHashTool/releases)
 ![Go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go&logoColor=white)
 ![Wails](https://img.shields.io/badge/Wails-v3.0.0--beta.9-E03C31)
 ![Vue](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vuedotjs&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows_10%2F11-0078D6)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-<img src="docs/screenshot-main.png" alt="主界面 / Main window" width="840" />
+**简体中文 | [English](README_EN.md)**
+
+<img src="docs/screenshot-main.png" alt="主界面" width="840" />
 
 </div>
 
 ---
 
-## ✨ 功能 / Features
+## ✨ 功能
 
-- **哈希计算 / Hash**：多选文件、文件夹递归、整窗拖拽添加；MD5 / SHA-1 / SHA-256 / SHA-512 / CRC32 多算法一次扫描；结果表格虚拟滚动（十万级行数不卡）；点击哈希值复制；不可读子目录生成「无权限」结果行，绝不静默漏算。
-- **单文件校验 / Verify**：粘贴期望哈希，按长度自动识别算法（32=MD5、40=SHA-1、64=SHA-256、128=SHA-512），大字号给出「一致 / 不一致」结论。
-- **双文件对比 / Compare**：选两个文件同算法对比，并排展示各算法哈希值。
-- **批量校验 / Batch Verify**：导入 md5sum/sha256sum 标准清单（.sha256/.sha1/.sha512/.md5/.txt/.sum/.sums，支持 `#` 注释行），扩展名×哈希长度交叉校验识别算法；基准目录可切换；输出 通过/不一致/缺失/无法读取 四类统计与明细；一键导出问题项。
-- **导出 / Export**：CSV（带 UTF-8 BOM，Excel 直开不乱码）与标准 SUM 格式；导出的 SUM 可被批量校验重新导入（闭环，有集成测试保障）。CRC32 因无法重新导入而不提供 SUM 导出。
-- **界面 / UI**：Mica 云母窗口材质（Win11，低版本系统自动回退）、浅色/深色主题（默认跟随系统）、中英双语即时切换（默认跟随系统语言）、150–250ms 过渡动画、空状态引导。
+- **哈希计算**：多选文件、文件夹递归、整窗拖拽添加；MD5 / SHA-1 / SHA-256 / SHA-512 / CRC32 多算法一次扫描；结果表格虚拟滚动（十万级行数不卡）；点击哈希值复制；不可读子目录生成「无权限」结果行，绝不静默漏算。
+- **单文件校验**：粘贴期望哈希，按长度自动识别算法（32=MD5、40=SHA-1、64=SHA-256、128=SHA-512），大字号给出「一致 / 不一致」结论。
+- **双文件对比**：选两个文件同算法对比，并排展示各算法哈希值。
+- **批量校验**：导入 md5sum/sha256sum 标准清单（.sha256/.sha1/.sha512/.md5/.txt/.sum/.sums，支持 `#` 注释行），扩展名×哈希长度交叉校验识别算法；基准目录可切换；输出 通过/不一致/缺失/无法读取 四类统计与明细；一键导出问题项。
+- **导出**：CSV（带 UTF-8 BOM，Excel 直开不乱码）与标准 SUM 格式；导出的 SUM 可被批量校验重新导入（闭环，有集成测试保障）。CRC32 因无法重新导入而不提供 SUM 导出。
+- **界面**：Mica 云母窗口材质（Win11，低版本系统自动回退）、浅色/深色主题（默认跟随系统）、中英双语即时切换（默认跟随系统语言）、150–250ms 过渡动画、空状态引导。
 
-## 📥 下载 / Download
+## 📥 下载
 
 前往 [**Releases**](https://github.com/WanQTs/GoHashTool/releases) 下载 `GoHashTool-*.exe`——单文件绿色软件，双击即用，无需安装（另附 UPX 压缩版，体积更小）。
-Single-file portable exe from the [Releases page](https://github.com/WanQTs/GoHashTool/releases) — no installation needed.
 
-## 🚀 使用方法 / Usage
+## 🚀 使用方法
 
 1. **哈希计算**：点击「选择文件 / 选择文件夹」，或直接把文件/文件夹拖进窗口；勾选算法（默认 SHA-256）后点「开始」。计算中显示总进度条、当前文件、已用时间、实时速度，可随时取消。
 2. **单文件校验**：选择文件并粘贴期望哈希值，自动识别算法，完成后显示对比结论。
@@ -41,12 +42,12 @@ Single-file portable exe from the [Releases page](https://github.com/WanQTs/GoHa
 4. **批量校验**：选择清单文件（或直接把清单文件拖进窗口，会自动跳转并开始校验）；默认以清单所在目录为基准解析相对路径，也可手动指定其他基准目录。
 5. **导出**：结果出来后点击「导出 CSV」或「导出 SUM」；批量校验页可单独导出问题项。
 
-## 📊 性能实测 / Performance Report
+## 📊 性能实测
 
-测试硬件 / Test hardware:
+测试硬件：
 
-- CPU: AMD Ryzen 9 9950X 16-Core · 磁盘 / Disk: TOPMORE Dubhe NVMe SSD · 内存 / RAM: 96 GB
-- 系统 / OS: Windows 11 专业工作站版 · Go 1.26.6（标准库 SHA-256/SHA-512 走 SHA-NI/AVX2 汇编路径）
+- CPU: AMD Ryzen 9 9950X 16-Core · 磁盘: TOPMORE Dubhe NVMe SSD · 内存: 96 GB
+- 系统: Windows 11 专业工作站版 · Go 1.26.6（标准库 SHA-256/SHA-512 走 SHA-NI/AVX2 汇编路径）
 
 `go test -run='^$' -bench=. -benchtime=1x ./internal/hashcore/` 实测输出：
 
@@ -69,13 +70,12 @@ BenchmarkManySmallFiles-32        1    84642400 ns/op    10.24 MB_total
 | 内存占用 | RSS 增量 < 100 MB | 流式 + 池化缓冲，任意大小文件内存恒定；启动后 RSS ≈ 33 MB | ✅ |
 
 > 基准夹具在同一进程内跨 benchmark 复用，首轮后可能命中 OS 页缓存——上表为**热缓存吞吐**，非冷盘首读成绩。
-> Fixtures are reused within one process and may hit the OS page cache — these are warm-cache numbers.
 
 设计取舍（详见源码注释）：流式读取 + 自适应缓冲（<64MB 用 1MB、大文件 16MB，`sync.Pool` 复用）；大文件双缓冲流水线（预读与哈希计算重叠）；多算法 `io.MultiWriter` 一次扫描；小文件 worker pool 并发 `min(NumCPU, 8)`；进度上报 200ms 节流、表格数据分批 ≤500 条推送。
 
-## 🛠️ 从零构建 / Build from Scratch
+## 🛠️ 从零构建
 
-前置条件 / Prerequisites:
+前置条件：
 
 - Go 1.25+、Node.js 20.19+（Vite 7 要求）
 - Wails CLI v3：`go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.9`
@@ -83,37 +83,37 @@ BenchmarkManySmallFiles-32        1    84642400 ns/op    10.24 MB_total
 - `wails3 doctor` 全部通过
 
 ```bash
-# 1. 安装前端依赖 / install frontend deps
+# 1. 安装前端依赖
 cd frontend && npm install && cd ..
 
 # 2. 构建单文件 exe（production：无控制台窗口；图标/清单/版本信息经 syso 嵌入）
 wails3 build
-# 产物 / output: bin/gohash.exe
+# 产物: bin/gohash.exe
 
-# 3. 可选：UPX 压缩体积 / optional: compress with upx
+# 3. 可选：UPX 压缩体积
 upx --best bin/gohash.exe
 ```
 
-开发模式 / Development:
+开发模式：
 
 ```bash
-wails3 dev                    # 热重载开发 / live-reload dev
-go test ./...                 # 单元 + 集成测试 / unit & integration tests
-go test -race ./...           # 竞态检测（需 GCC）/ race detector (needs GCC)
-go vet ./... && gofmt -l .    # 静态检查与格式 / lint & format
+wails3 dev                    # 热重载开发
+go test ./...                 # 单元 + 集成测试
+go test -race ./...           # 竞态检测（需 GCC）
+go vet ./... && gofmt -l .    # 静态检查与格式
 cd frontend && npm run test   # 前端纯函数单测（vitest）
 cd frontend && npm run build  # 前端类型检查与构建
 wails3 generate bindings -ts  # 后端方法变更后重新生成前端绑定
 ```
 
-冒烟脚本 / Smoke script:
+冒烟脚本：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools/smoke-test.ps1
 # 先跑 bin/gohash.exe --selftest 无界面自检（验退出码），再测启动耗时与 RSS、截图
 ```
 
-## 🗂️ 项目结构 / Project Structure
+## 🗂️ 项目结构
 
 ```
 main.go                  Wails v3 入口（窗口选项、Mica 背景、文件拖拽事件转发、--selftest 分支）
@@ -134,7 +134,7 @@ frontend/src/            Vue 3 + TypeScript + Naive UI + vue-i18n
 tools/smoke-test.ps1     冒烟测试脚本（selftest 退出码 / 启动耗时 / RSS / 截图）
 ```
 
-## 🛡️ 可靠性设计 / Reliability
+## 🛡️ 可靠性设计
 
 - 后端错误全部结构化返回（错误码 + 中英双语信息），前端统一 toast；无 panic、无静默吞错；任务 goroutine 有 recover 兜底，panic 时前端收到带 `fatal` 的完成事件而非卡死。
 - 文件被占用 / 无权限 / 已删除单独标记状态，不中断整批任务；不可读子目录生成可见错误行。
@@ -143,6 +143,10 @@ tools/smoke-test.ps1     冒烟测试脚本（selftest 退出码 / 启动耗时 
 - exe 清单声明 `longPathAware`（系统启用长路径策略后可处理超 260 字符路径）。
 - 哈希比较忽略大小写；清单解析兼容 `*文件名` 二进制标记、行首 `\` 转义、空格文件名、UTF-8 BOM、CRLF/LF 混用、`#` 注释行；重复条目按路径去重（首条胜出）。
 - 测试：Go 单测/竞态检测 + SUM 闭环集成测试 + 前端 vitest + exe 级 `--selftest` 与冒烟脚本。
+
+## 📄 开源协议
+
+[MIT License](LICENSE) © 2026 WanQTs
 
 ---
 

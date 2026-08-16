@@ -44,10 +44,15 @@ public class Win32 {
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
     [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    [DllImport("shcore.dll")] public static extern int SetProcessDpiAwareness(int awareness);
     public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
 }
 "@
 Add-Type -TypeDefinition $sig -ReferencedAssemblies System.Drawing
+# 关键：声明为 Per-Monitor DPI 感知（2），使 GetWindowRect 与 CopyFromScreen
+# 统一使用物理像素——否则 >100% 缩放的显示器上截图会被放大/裁切、带入邻窗内容。
+# 进程已声明过时返回 0x80070005，忽略即可。
+try { [void][Win32]::SetProcessDpiAwareness(2) } catch { }
 $SWP_NOMOVE = 0x0002; $SWP_NOSIZE = 0x0001; $SWP_NOACTIVATE = 0x0010
 $HWND_TOPMOST = New-Object IntPtr(-1)
 $HWND_NOTOPMOST = New-Object IntPtr(-2)
@@ -56,9 +61,8 @@ Write-Output "SET_TOPMOST=$setOk"
 Start-Sleep -Milliseconds 3000
 $rect = New-Object Win32+RECT
 [Win32]::GetWindowRect($handle, [ref]$rect) | Out-Null
-# 注：在 >100% 缩放（如 150% DPI）的显示器上，GetWindowRect 物理像素与 CopyFromScreen 的
-# 缩放坐标系不一致，截图可能被放大/裁切，且无法避开其他置顶窗口遮挡——属截图环境伪影，
-# 不代表应用布局问题（布局校验可用无头浏览器 --force-device-scale-factor=1 截图）。
+# 注：已声明 Per-Monitor DPI 感知（见上），物理像素坐标一致；
+# 若窗口矩形被其他置顶窗口遮挡仍会带入遮挡内容，属截图环境限制。
 
 $w = $rect.Right - $rect.Left
 $h = $rect.Bottom - $rect.Top
