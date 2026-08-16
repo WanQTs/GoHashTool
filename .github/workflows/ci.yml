@@ -23,6 +23,21 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      # vitest 纯函数单测（对 @wailsio/runtime 与 bindings 用 vi.mock 隔离）
+      - name: Frontend tests
+        working-directory: frontend
+        run: npm run test
+
+      # vue-tsc --noEmit && vite build（类型检查 + 产物构建）
+      # 必须在 Go 步骤之前：main.go 的 //go:embed all:frontend/dist 需要 dist 存在
+      - name: Frontend type-check & build
+        working-directory: frontend
+        run: npm run build
+
       # gofmt 应无输出；有输出即失败并列出文件
       - name: Go format & vet
         shell: bash
@@ -34,17 +49,3 @@ jobs:
       # 单元 + 集成测试（绑定层纯逻辑 / 哈希核心 / 清单解析 / SUM 闭环）
       - name: Go tests
         run: go test ./...
-
-      - name: Frontend deps
-        working-directory: frontend
-        run: npm ci
-
-      # vitest 纯函数单测（对 @wailsio/runtime 与 bindings 用 vi.mock 隔离）
-      - name: Frontend tests
-        working-directory: frontend
-        run: npm run test
-
-      # vue-tsc --noEmit && vite build（类型检查 + 产物构建）
-      - name: Frontend type-check & build
-        working-directory: frontend
-        run: npm run build
