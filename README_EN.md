@@ -1,26 +1,28 @@
 <div align="center">
 
-<img src="build/appicon.png" alt="GoHashTool logo" width="108" />
+<img src="build/appicon.png" alt="GoHashTool logo" width="128" />
 
-# File Hash Tool · 文件哈希工具
+# GoHashTool
 
-**A Windows 64-bit desktop tool to compute, verify and compare file hashes.**
+**File Hash Tool — compute, verify, compare, and batch-verify against manifests**
 
 [![Release](https://img.shields.io/github/v/release/WanQTs/GoHashTool)](https://github.com/WanQTs/GoHashTool/releases)
 [![CI](https://github.com/WanQTs/GoHashTool/actions/workflows/ci.yml/badge.svg)](https://github.com/WanQTs/GoHashTool/actions/workflows/ci.yml)
-![Go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go&logoColor=white)
-![Wails](https://img.shields.io/badge/Wails-v3.0.0--beta.9-E03C31)
-![Vue](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vuedotjs&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Windows_10%2F11-0078D6)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![Wails](https://img.shields.io/badge/Wails-v3.0.0--beta.9-E03C31)](https://v3.wails.io/)
+[![Vue](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-0078D6)](https://github.com/WanQTs/GoHashTool)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**[简体中文](README.md) | English**
+[中文](README.md) · **English**
 
-<img src="docs/screenshot-main.png" alt="Main window" width="840" />
+[✨ Features](#-features) · [📸 Screenshots](#-screenshots) · [📥 Download](#-download) · [🚀 Usage](#-usage) · [⚡ Performance](#-performance) · [🛠️ Build](#-build-from-scratch)
 
 </div>
 
 ---
+
+A Windows 64-bit desktop tool to compute, verify and compare file hashes. Built with **Wails v3 + Go + Vue 3 + TypeScript** — fully local, no network requests, no telemetry — and delivered as a **single-file exe**.
 
 ## ✨ Features
 
@@ -30,6 +32,14 @@
 - **Batch Verify**: import standard md5sum/sha256sum manifests (.sha256/.sha1/.sha512/.md5/.txt/.sum/.sums, `#` comment lines supported); the algorithm is cross-validated by file extension and hash length; switchable base directory; per-file verdicts grouped as passed / failed / missing / unreadable, with one-click export of problem rows.
 - **Export**: CSV (UTF-8 BOM, opens cleanly in Excel) and standard SUM format. Exported SUM files can be re-imported by Batch Verify (round-trip covered by integration tests). CRC32 is excluded from SUM export because it cannot be re-imported.
 - **UI**: Mica window material (Windows 11, automatic fallback on older systems), light/dark theme (follows system by default), instant Chinese/English switching (follows system language), 150–250ms transitions, empty-state guidance.
+
+## 📸 Screenshots
+
+<div align="center">
+
+<img src="docs/screenshot-main.png" alt="Main window" width="840" />
+
+</div>
 
 ## 📥 Download
 
@@ -45,7 +55,7 @@ Requires 64-bit Windows 10/11 and the WebView2 Runtime (preinstalled on Windows 
 4. **Batch Verify**: select a manifest (or drop one into the window — the app jumps to the page and starts automatically). Relative paths resolve against the manifest directory by default; a custom base directory can be set.
 5. **Export**: once results are in, use "Export CSV" / "Export SUM"; the Batch page can export only the problem rows.
 
-## 📊 Performance Report
+## ⚡ Performance
 
 Test hardware:
 
@@ -148,13 +158,12 @@ tools/smoke-test.ps1     Smoke test (selftest exit code / startup time / RSS / s
 - Hash comparison is case-insensitive; the manifest parser tolerates `*filename` binary markers, GNU `\` line escapes, filenames with spaces, UTF-8 BOM, mixed CRLF/LF and `#` comments; duplicate entries are deduped by path (first wins).
 - Testing: Go unit tests + race detector + SUM round-trip integration test + frontend vitest + exe-level `--selftest` and smoke script.
 
-## 📄 License
-
-[MIT License](LICENSE) © 2026 WanQTs
-
 ---
 
 <div align="center">
-  Legacy: the Wails v2 codebase is archived on the
-  <a href="https://github.com/WanQTs/GoHashTool/tree/v2"><code>v2</code></a> branch.
+
+**If this little tool helps you, a ⭐ star is appreciated!**
+
+[Releases](https://github.com/WanQTs/GoHashTool/releases) · [MIT License](LICENSE) © 2026 WanQTs · Legacy: [v2 branch](https://github.com/WanQTs/GoHashTool/tree/v2) (Wails v2 archive)
+
 </div>

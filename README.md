@@ -1,28 +1,30 @@
 <div align="center">
 
-<img src="build/appicon.png" alt="GoHashTool logo" width="108" />
+<img src="build/appicon.png" alt="GoHashTool 图标" width="128" />
 
-# 文件哈希工具 · File Hash Tool
+# GoHashTool
 
-**Windows 64 位桌面文件哈希工具：计算 · 校验 · 对比 · 批量清单验证**
+**文件哈希工具 —— 计算 · 校验 · 对比 · 批量清单验证**
 
 [![Release](https://img.shields.io/github/v/release/WanQTs/GoHashTool)](https://github.com/WanQTs/GoHashTool/releases)
 [![CI](https://github.com/WanQTs/GoHashTool/actions/workflows/ci.yml/badge.svg)](https://github.com/WanQTs/GoHashTool/actions/workflows/ci.yml)
-![Go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go&logoColor=white)
-![Wails](https://img.shields.io/badge/Wails-v3.0.0--beta.9-E03C31)
-![Vue](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vuedotjs&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Windows_10%2F11-0078D6)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![Wails](https://img.shields.io/badge/Wails-v3.0.0--beta.9-E03C31)](https://v3.wails.io/)
+[![Vue](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-0078D6)](https://github.com/WanQTs/GoHashTool)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**简体中文 | [English](README_EN.md)**
+**中文** · [English](README_EN.md)
 
-<img src="docs/screenshot-main.png" alt="主界面" width="840" />
+[✨ 功能特性](#-功能特性) · [📸 界面截图](#-界面截图) · [📥 下载](#-下载) · [🚀 使用方法](#-使用方法) · [⚡ 性能实测](#-性能实测) · [🛠️ 从零构建](#-从零构建)
 
 </div>
 
 ---
 
-## ✨ 功能
+Windows 64 位桌面工具，用于文件哈希值的获取与对比。技术栈为 **Wails v3 + Go + Vue 3 + TypeScript**，纯本地运行、无网络请求、无遥测，最终交付为**单文件 exe**。
+
+## ✨ 功能特性
 
 - **哈希计算**：多选文件、文件夹递归、整窗拖拽添加；MD5 / SHA-1 / SHA-256 / SHA-512 / CRC32 多算法一次扫描；结果表格虚拟滚动（十万级行数不卡）；点击哈希值复制；不可读子目录生成「无权限」结果行，绝不静默漏算。
 - **单文件校验**：粘贴期望哈希，按长度自动识别算法（32=MD5、40=SHA-1、64=SHA-256、128=SHA-512），大字号给出「一致 / 不一致」结论。
@@ -31,9 +33,19 @@
 - **导出**：CSV（带 UTF-8 BOM，Excel 直开不乱码）与标准 SUM 格式；导出的 SUM 可被批量校验重新导入（闭环，有集成测试保障）。CRC32 因无法重新导入而不提供 SUM 导出。
 - **界面**：Mica 云母窗口材质（Win11，低版本系统自动回退）、浅色/深色主题（默认跟随系统）、中英双语即时切换（默认跟随系统语言）、150–250ms 过渡动画、空状态引导。
 
+## 📸 界面截图
+
+<div align="center">
+
+<img src="docs/screenshot-main.png" alt="主界面" width="840" />
+
+</div>
+
 ## 📥 下载
 
 前往 [**Releases**](https://github.com/WanQTs/GoHashTool/releases) 下载 `GoHashTool-*.exe`——单文件绿色软件，双击即用，无需安装（另附 UPX 压缩版，体积更小）。
+
+要求 64 位 Windows 10/11 与 WebView2 运行时（Windows 11 已预装）。
 
 ## 🚀 使用方法
 
@@ -43,7 +55,7 @@
 4. **批量校验**：选择清单文件（或直接把清单文件拖进窗口，会自动跳转并开始校验）；默认以清单所在目录为基准解析相对路径，也可手动指定其他基准目录。
 5. **导出**：结果出来后点击「导出 CSV」或「导出 SUM」；批量校验页可单独导出问题项。
 
-## 📊 性能实测
+## ⚡ 性能实测
 
 测试硬件：
 
@@ -145,12 +157,12 @@ tools/smoke-test.ps1     冒烟测试脚本（selftest 退出码 / 启动耗时 
 - 哈希比较忽略大小写；清单解析兼容 `*文件名` 二进制标记、行首 `\` 转义、空格文件名、UTF-8 BOM、CRLF/LF 混用、`#` 注释行；重复条目按路径去重（首条胜出）。
 - 测试：Go 单测/竞态检测 + SUM 闭环集成测试 + 前端 vitest + exe 级 `--selftest` 与冒烟脚本。
 
-## 📄 开源协议
-
-[MIT License](LICENSE) © 2026 WanQTs
-
 ---
 
 <div align="center">
-  历史版本：Wails v2 代码存档于 <a href="https://github.com/WanQTs/GoHashTool/tree/v2"><code>v2</code></a> 分支。
+
+**如果这个小工具帮到了你，欢迎点个 ⭐ Star**
+
+[发布下载](https://github.com/WanQTs/GoHashTool/releases) · [MIT 许可证](LICENSE) © 2026 WanQTs · 历史版本：[v2 分支](https://github.com/WanQTs/GoHashTool/tree/v2)（Wails v2 存档）
+
 </div>
