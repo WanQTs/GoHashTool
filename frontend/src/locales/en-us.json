@@ -1,0 +1,135 @@
+{
+  "app": {
+    "title": "File Hash Tool"
+  },
+  "nav": {
+    "hash": "Hash",
+    "verify": "Verify",
+    "compare": "Compare",
+    "batch": "Batch Verify"
+  },
+  "topbar": {
+    "switchLang": "切换到中文",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
+  },
+  "common": {
+    "start": "Start",
+    "cancel": "Cancel",
+    "clear": "Clear",
+    "copied": "Copied to clipboard",
+    "total": "Total",
+    "ok": "OK",
+    "failed": "Failed",
+    "elapsed": "Elapsed",
+    "avgSpeed": "Avg speed",
+    "canceled": "Canceled",
+    "taskError": "Internal task error"
+  },
+  "status": {
+    "ok": "OK",
+    "occupied": "Occupied",
+    "no_permission": "No permission",
+    "not_found": "Not found",
+    "error": "Error",
+    "canceled": "Canceled"
+  },
+  "verdict": {
+    "match": "Identical",
+    "mismatch": "Different",
+    "pass": "Passed",
+    "fail": "Failed",
+    "missing": "Missing",
+    "error": "Unreadable"
+  },
+  "error": {
+    "unknown": "Unknown error",
+    "ipc": "Backend call failed",
+    "fatal": "Internal task error",
+    "startFailed": "Failed to start task"
+  },
+  "table": {
+    "file": "File",
+    "size": "Size",
+    "duration": "Duration",
+    "status": "Status",
+    "result": "Result",
+    "expected": "Expected",
+    "actual": "Actual",
+    "algo": "Algorithm",
+    "clickToCopy": "Click to copy",
+    "filterPlaceholder": "Filter by path…",
+    "onlyProblems": "Problems only",
+    "rowCount": "{shown} / {total} rows"
+  },
+  "progress": {
+    "current": "Current file",
+    "items": "Items",
+    "speed": "Speed",
+    "elapsed": "Elapsed",
+    "noFile": "Preparing…"
+  },
+  "hash": {
+    "pickFiles": "Select Files",
+    "pickFolder": "Select Folder",
+    "pendingList": "Pending",
+    "empty": "Click or drop to add files",
+    "emptyDesc": "Use the buttons above to select files or folders, or drop them anywhere in the window.",
+    "needPaths": "Add files or folders first",
+    "needAlgo": "Select at least one algorithm",
+    "exportCsv": "Export CSV",
+    "exportSum": "Export SUM",
+    "sumAlgo": "Algorithm",
+    "sumNoCrc32": "CRC32 cannot be exported as a SUM manifest (re-import is not supported)",
+    "exported": "Exported: {path}"
+  },
+  "verify": {
+    "pickFile": "Select File",
+    "fileLabel": "File to verify",
+    "expectedLabel": "Expected hash",
+    "expectedPlaceholder": "Paste an MD5 / SHA-1 / SHA-256 / SHA-512 hash",
+    "detected": "Detected",
+    "unknown": "Unrecognized: enter a 32 / 40 / 64 / 128-char hex hash",
+    "needFile": "Select a file first",
+    "needHash": "Paste the expected hash first",
+    "computeFailed": "Failed to hash the file",
+    "matchDesc": "The file hash matches the expected value",
+    "mismatchDesc": "The file hash differs from the expected value",
+    "expected": "Expected",
+    "actual": "Actual",
+    "empty": "Verify file integrity",
+    "emptyDesc": "Select a file and paste the expected hash. The algorithm is detected automatically."
+  },
+  "compare": {
+    "fileA": "File A",
+    "fileB": "File B",
+    "pickFile": "Select File",
+    "needBoth": "Select both files first",
+    "matchDesc": "The two files have identical hashes for all selected algorithms",
+    "mismatchDesc": "The two files have different hashes",
+    "computeFailed": "Failed to hash one of the files",
+    "colAlgo": "Algorithm",
+    "empty": "Compare two files",
+    "emptyDesc": "Select two files and compare their hashes algorithm by algorithm."
+  },
+  "batch": {
+    "pickManifest": "Select Manifest",
+    "manifestLabel": "Manifest file",
+    "baseDirLabel": "Base directory",
+    "baseDirDefault": "Manifest directory",
+    "pickBaseDir": "Custom Base Directory",
+    "resetBaseDir": "Reset to Default",
+    "detectedAlgo": "Detected",
+    "needManifest": "Select a manifest file first",
+    "statPass": "Passed",
+    "statFail": "Failed",
+    "statMissing": "Missing",
+    "statError": "Unreadable",
+    "statTotal": "Total",
+    "exportFailedOnly": "Export Mismatches",
+    "exportAll": "Export All CSV",
+    "empty": "Verify files in batch",
+    "emptyDesc": "Select a .sha256 / .md5 manifest file, or drop one anywhere in the window to start."
+  }
+}
