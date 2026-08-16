@@ -1,0 +1,32 @@
+version: '3'
+
+# 根 Taskfile：wails3 build / wails3 task run 的入口（go-task 内嵌于 wails3 CLI）。
+# 本项目目标平台仅 Windows 64 位，故只包含 common 与 windows 两个子 Taskfile。
+
+vars:
+  APP_NAME: "gohash"
+  BIN_DIR: "bin"
+  PACKAGE_MANAGER: '{{.PACKAGE_MANAGER | default "npm"}}'
+  VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
+  # 目标平台（GOOS=... 覆盖）；默认取宿主 OS。
+  GOOS: '{{.GOOS | default OS}}'
+
+includes:
+  common: ./build/Taskfile.yml
+  windows: ./build/windows/Taskfile.yml
+
+tasks:
+  build:
+    summary: Builds the application
+    cmds:
+      - task: "{{.GOOS}}:build"
+
+  run:
+    summary: Runs the application
+    cmds:
+      - task: "{{.GOOS}}:run"
+
+  dev:
+    summary: Runs the application in development mode
+    cmds:
+      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}

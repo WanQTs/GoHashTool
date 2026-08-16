@@ -1,0 +1,15 @@
+{
+	"fixed": {
+		"file_version": "1.0.0"
+	},
+	"info": {
+		"0000": {
+			"ProductVersion": "1.0.0",
+			"CompanyName": "gohash",
+			"FileDescription": "文件哈希值获取与对比工具 / File hash compute & compare tool",
+			"LegalCopyright": "(c) 2026 gohash",
+			"ProductName": "文件哈希工具 File Hash Tool",
+			"Comments": "Wails v3 + Go + Vue 3"
+		}
+	}
+}

@@ -1,0 +1,43 @@
+# 项目构建配置（Wails v3）。
+# 修改 info 后运行 `wails3 task common:update:build-assets` 重新生成构建资产
+# （会覆盖对 build/ 下资产文件的手工修改）。
+version: '3'
+
+# 应用元数据：用于生成 Windows 版本信息（info.json）、清单与图标等资产。
+info:
+  companyName: "gohash"
+  productName: "文件哈希工具 File Hash Tool"
+  productIdentifier: "com.gohash.filehashtool"
+  description: "文件哈希值获取与对比工具 / File hash compute & compare tool"
+  copyright: "(c) 2026 gohash"
+  comments: "Wails v3 + Go + Vue 3"
+  version: "1.0.0"
+
+# 开发模式（wails3 dev）配置
+dev_mode:
+  root_path: .
+  log_level: warn
+  debounce: 1000
+  ignore:
+    dir:
+      - .git
+      - node_modules
+      - frontend
+      - bin
+    file:
+      - .DS_Store
+      - .gitignore
+      - .gitkeep
+      - "*_test.go"
+    watched_extension:
+      - "*.go"
+      - "*.js"
+      - "*.ts"
+    git_ignore: true
+  executes:
+    - cmd: wails3 build DEV=true
+      type: blocking
+    - cmd: wails3 task common:dev:frontend
+      type: background
+    - cmd: wails3 task run
+      type: primary

@@ -1,0 +1,141 @@
+{
+  "app": {
+    "title": "文件哈希工具"
+  },
+  "nav": {
+    "hash": "哈希计算",
+    "verify": "单文件校验",
+    "compare": "双文件对比",
+    "batch": "批量校验"
+  },
+  "topbar": {
+    "switchLang": "Switch to English",
+    "themeLight": "亮色",
+    "themeDark": "暗色",
+    "themeSystem": "跟随系统"
+  },
+  "dialog": {
+    "pickFiles": "选择文件",
+    "pickFolder": "选择文件夹",
+    "pickManifest": "选择清单文件",
+    "export": "导出"
+  },
+  "common": {
+    "start": "开始",
+    "cancel": "取消",
+    "clear": "清空",
+    "copied": "已复制到剪贴板",
+    "total": "总数",
+    "ok": "成功",
+    "failed": "失败",
+    "elapsed": "耗时",
+    "avgSpeed": "平均速度",
+    "canceled": "已取消",
+    "taskError": "任务内部错误"
+  },
+  "status": {
+    "ok": "成功",
+    "occupied": "被占用",
+    "no_permission": "无权限",
+    "not_found": "已删除",
+    "error": "错误",
+    "canceled": "已取消"
+  },
+  "verdict": {
+    "match": "一致",
+    "mismatch": "不一致",
+    "pass": "通过",
+    "fail": "失败",
+    "missing": "缺失",
+    "error": "无法读取"
+  },
+  "error": {
+    "unknown": "未知错误",
+    "ipc": "调用后端失败",
+    "fatal": "任务内部错误",
+    "startFailed": "任务启动失败"
+  },
+  "table": {
+    "file": "文件名",
+    "size": "大小",
+    "duration": "耗时",
+    "status": "状态",
+    "result": "结果",
+    "expected": "期望值",
+    "actual": "实际值",
+    "algo": "算法",
+    "clickToCopy": "点击复制",
+    "filterPlaceholder": "按路径筛选…",
+    "onlyProblems": "仅看问题行",
+    "rowCount": "{shown} / {total} 行"
+  },
+  "progress": {
+    "current": "当前文件",
+    "items": "条目",
+    "speed": "速度",
+    "elapsed": "已用时间",
+    "noFile": "准备中…"
+  },
+  "hash": {
+    "pickFiles": "选择文件",
+    "pickFolder": "选择文件夹",
+    "pendingList": "待计算",
+    "empty": "点击或拖拽添加文件",
+    "emptyDesc": "使用上方按钮选择文件或文件夹，或将它们直接拖入窗口。",
+    "needPaths": "请先添加文件或文件夹",
+    "needAlgo": "请至少选择一个算法",
+    "exportCsv": "导出 CSV",
+    "exportSum": "导出 SUM",
+    "sumAlgo": "导出算法",
+    "sumNoCrc32": "CRC32 不支持导出 SUM 清单（导出后无法重新导入校验）",
+    "exported": "已导出：{path}"
+  },
+  "verify": {
+    "pickFile": "选择文件",
+    "fileLabel": "待校验文件",
+    "expectedLabel": "期望哈希值",
+    "expectedPlaceholder": "粘贴 MD5 / SHA-1 / SHA-256 / SHA-512 哈希值",
+    "detected": "识别算法",
+    "unknown": "无法识别算法：请输入 32 / 40 / 64 / 128 位十六进制哈希值",
+    "needFile": "请先选择文件",
+    "needHash": "请粘贴期望哈希值",
+    "computeFailed": "文件计算失败",
+    "matchDesc": "文件哈希与期望值完全一致",
+    "mismatchDesc": "文件哈希与期望值不一致",
+    "expected": "期望值",
+    "actual": "实际值",
+    "empty": "校验文件完整性",
+    "emptyDesc": "选择一个文件并粘贴期望哈希值，自动识别算法并比对。"
+  },
+  "compare": {
+    "fileA": "文件 A",
+    "fileB": "文件 B",
+    "pickFile": "选择文件",
+    "needBoth": "请选择两个文件",
+    "matchDesc": "两个文件在所选算法下哈希值全部一致",
+    "mismatchDesc": "两个文件的哈希值存在差异",
+    "computeFailed": "有文件计算失败，无法完成对比",
+    "colAlgo": "算法",
+    "empty": "对比两个文件",
+    "emptyDesc": "分别选择两个文件，按所选算法逐一比对哈希值。"
+  },
+  "batch": {
+    "pickManifest": "选择清单文件",
+    "manifestLabel": "清单文件",
+    "baseDirLabel": "基准目录",
+    "baseDirDefault": "清单所在目录",
+    "pickBaseDir": "自定义基准目录",
+    "resetBaseDir": "恢复默认",
+    "detectedAlgo": "识别算法",
+    "needManifest": "请先选择清单文件",
+    "statPass": "通过",
+    "statFail": "不一致",
+    "statMissing": "缺失",
+    "statError": "无法读取",
+    "statTotal": "总数",
+    "exportFailedOnly": "导出不一致项",
+    "exportAll": "导出全部 CSV",
+    "empty": "批量校验文件",
+    "emptyDesc": "选择 .sha256 / .md5 等清单文件，或直接拖入窗口自动开始校验。"
+  }
+}

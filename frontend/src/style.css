@@ -1,0 +1,513 @@
+/* 全局样式：布局骨架、主题变量（Mica 半透明）、拖拽高亮、表格行底色、等宽字体、过渡动画。 */
+
+/* Mica 云母背景（main.go 窗口 BackgroundTypeTranslucent + BackdropType=Mica）：
+   html/body/#app-root 必须透明，系统材质才能透出；面板用带 alpha 的变量浮于其上。 */
+:root {
+  --app-bg: transparent;
+  --panel-bg: rgba(255, 255, 255, 0.72);
+  --sidebar-bg: rgba(246, 247, 250, 0.55);
+  --topbar-bg: rgba(255, 255, 255, 0.6);
+  --topbar-border: rgba(31, 35, 41, 0.08);
+  --border-color: rgba(31, 35, 41, 0.09);
+  --text-primary: #1f2329;
+  --text-secondary: #6b7280;
+  --accent: #2f7bff;
+  --row-pass: rgba(24, 160, 88, 0.08);
+  --row-fail: rgba(208, 48, 80, 0.09);
+  --row-missing: rgba(240, 160, 32, 0.10);
+  --row-error: rgba(208, 48, 80, 0.06);
+  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px -10px rgba(15, 23, 42, 0.10);
+}
+
+/* 拖拽高亮变量挂在 body 上：v3 的 file-drop-target-active class 加在
+   data-file-drop-target 元素（<body>）本身，需随应用内深浅色翻转 */
+body {
+  --drop-mask: rgba(47, 123, 255, 0.06);
+  --drop-border: rgba(47, 123, 255, 0.65);
+}
+
+body:has(#app-root.dark) {
+  --drop-mask: rgba(47, 123, 255, 0.10);
+  --drop-border: rgba(88, 148, 255, 0.8);
+}
+
+#app-root.dark {
+  --app-bg: transparent;
+  --panel-bg: rgba(30, 30, 37, 0.72);
+  --sidebar-bg: rgba(17, 17, 23, 0.55);
+  --topbar-bg: rgba(30, 30, 37, 0.6);
+  --topbar-border: rgba(255, 255, 255, 0.08);
+  --border-color: rgba(255, 255, 255, 0.09);
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --row-pass: rgba(24, 160, 88, 0.15);
+  --row-fail: rgba(208, 48, 80, 0.16);
+  --row-missing: rgba(240, 160, 32, 0.16);
+  --row-error: rgba(208, 48, 80, 0.11);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px -10px rgba(0, 0, 0, 0.5);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  /* Mica：页面底色透明，透出系统云母材质 */
+  background: transparent;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+}
+
+#app {
+  height: 100vh;
+}
+
+/* ---------- 布局骨架 ---------- */
+
+#app-root {
+  display: flex;
+  height: 100vh;
+  background-color: var(--app-bg);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Naive UI 组件背景半透明化（内联 --n-* 变量只喂样式表规则，!important 覆盖样式表背景） */
+.n-card {
+  background-color: var(--panel-bg) !important;
+  border-color: var(--border-color) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.result-table .n-data-table {
+  background-color: transparent !important;
+}
+
+.result-table .n-data-table-th {
+  background-color: rgba(128, 128, 128, 0.10) !important;
+}
+
+.result-table .n-data-table-td {
+  background-color: transparent !important;
+}
+
+.sidebar {
+  width: 88px;
+  flex: 0 0 88px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 14px 10px;
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+  backdrop-filter: blur(10px);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  margin: 0 auto 12px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2f7bff, #18c29c);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 4px 12px -2px rgba(47, 123, 255, 0.45);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 2px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.nav-item:hover {
+  background-color: rgba(128, 128, 128, 0.14);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background-color: rgba(47, 123, 255, 0.16);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--topbar-border);
+  background-color: var(--topbar-bg);
+  backdrop-filter: blur(10px);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.topbar-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.icon-btn:hover {
+  color: var(--text-primary);
+  background-color: rgba(128, 128, 128, 0.10);
+}
+
+.workspace {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  overflow-y: auto;
+}
+
+/* ---------- 拖拽高亮 ---------- */
+/* Wails v3：拖入悬停时给 data-file-drop-target 元素（<body>）加 file-drop-target-active */
+
+body.file-drop-target-active::after {
+  content: "";
+  position: fixed;
+  inset: 8px;
+  border: 2px dashed var(--drop-border);
+  border-radius: 12px;
+  background-color: var(--drop-mask);
+  pointer-events: none;
+  z-index: 9000;
+}
+
+/* ---------- 表格 ---------- */
+
+.mono,
+.hash-cell {
+  font-family: Consolas, "JetBrains Mono", "Courier New", monospace;
+}
+
+.hash-cell {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0 4px;
+  margin: 0 -4px;
+  transition: background-color 0.15s ease;
+}
+
+.hash-cell:hover {
+  background-color: rgba(47, 123, 255, 0.12);
+}
+
+.cell-file {
+  min-width: 0;
+}
+
+.cell-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-path {
+  font-size: 11px;
+  opacity: 0.55;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 校验/对比行底色 */
+.row-pass > td {
+  background-color: var(--row-pass) !important;
+}
+
+.row-fail > td {
+  background-color: var(--row-fail) !important;
+}
+
+.row-missing > td {
+  background-color: var(--row-missing) !important;
+}
+
+.row-error > td {
+  background-color: var(--row-error) !important;
+}
+
+/* ---------- 汇总与结果横幅 ---------- */
+
+.summary-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  flex: 1 1 110px;
+  min-width: 104px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background-color: var(--panel-bg);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(8px);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.stat-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stat-value.ok {
+  color: #18a058;
+}
+
+.stat-value.err {
+  color: #d03050;
+}
+
+.stat-value.warn {
+  color: #f0a020;
+}
+
+.stat-value.info {
+  color: var(--accent);
+}
+
+.verdict-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background-color: var(--panel-bg);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(8px);
+}
+
+/* 结论横幅加同色系渐变底色，一眼可读 */
+.verdict-banner.match {
+  background: linear-gradient(135deg, rgba(24, 160, 88, 0.16), rgba(24, 200, 150, 0.06));
+  border-color: rgba(24, 160, 88, 0.32);
+}
+
+.verdict-banner.mismatch {
+  background: linear-gradient(135deg, rgba(208, 48, 80, 0.16), rgba(208, 48, 80, 0.05));
+  border-color: rgba(208, 48, 80, 0.32);
+}
+
+.verdict-banner.error {
+  background: linear-gradient(135deg, rgba(240, 160, 32, 0.16), rgba(240, 160, 32, 0.05));
+  border-color: rgba(240, 160, 32, 0.32);
+}
+
+.verdict-banner .verdict-icon {
+  flex: 0 0 auto;
+}
+
+.verdict-text {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.verdict-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.verdict-banner.match .verdict-text {
+  color: #18a058;
+}
+
+.verdict-banner.mismatch .verdict-text {
+  color: #d03050;
+}
+
+.verdict-banner.error .verdict-text {
+  color: #f0a020;
+}
+
+/* 期望/实际并排展示块 */
+.hash-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 760px) {
+  .hash-pair {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hash-pair .pair-item {
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background-color: var(--panel-bg);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(8px);
+}
+
+/* 组件内 scoped 样式的容器统一补柔和投影（属性不冲突，直接叠加） */
+.progress-panel,
+.compare-table {
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.pair-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.pair-value {
+  font-size: 13px;
+  word-break: break-all;
+  user-select: text;
+}
+
+/* ---------- 表单行 ---------- */
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.file-path-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-size: 13px;
+  user-select: text;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+/* ---------- 滚动条 ---------- */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 128, 128, 0.35);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(128, 128, 128, 0.55);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- 页面切换过渡 ---------- */
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
