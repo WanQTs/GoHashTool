@@ -1,0 +1,3 @@
+# 统一按 LF 检出：Windows 上 core.autocrlf=true 会把文件转成 CRLF，
+# 导致 `gofmt -l .` 全量误报（CI 曾因此失败）。二进制文件由 text=auto 自动识别，不受影响。
+* text=auto eol=lf
