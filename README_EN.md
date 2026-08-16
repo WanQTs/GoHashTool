@@ -7,6 +7,7 @@
 **A Windows 64-bit desktop tool to compute, verify and compare file hashes.**
 
 [![Release](https://img.shields.io/github/v/release/WanQTs/GoHashTool)](https://github.com/WanQTs/GoHashTool/releases)
+[![CI](https://github.com/WanQTs/GoHashTool/actions/workflows/ci.yml/badge.svg)](https://github.com/WanQTs/GoHashTool/actions/workflows/ci.yml)
 ![Go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go&logoColor=white)
 ![Wails](https://img.shields.io/badge/Wails-v3.0.0--beta.9-E03C31)
 ![Vue](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vuedotjs&logoColor=white)
