@@ -22,6 +22,7 @@ import {
   acceptTaskEvent,
   consumeDrop,
   createTaskSession,
+  detectAlgoByHash,
   dispatchDrop,
   dropPayload,
   errorText,
@@ -140,5 +141,47 @@ describe('createTaskSession 订阅生命周期', () => {
     expect(session.error.value?.code).toBe('no_files')
     session.destroy()
     for (const off of mocks.offFns) expect(off).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('detectAlgoByHash（按长度识别算法）', () => {
+  it('五种算法长度（含 8 位 CRC32），大小写不敏感', () => {
+    expect(detectAlgoByHash('1a2b3c4d')).toBe('crc32')
+    expect(detectAlgoByHash('a'.repeat(32))).toBe('md5')
+    expect(detectAlgoByHash('A'.repeat(40))).toBe('sha1')
+    expect(detectAlgoByHash('f'.repeat(64))).toBe('sha256')
+    expect(detectAlgoByHash('0'.repeat(128))).toBe('sha512')
+  })
+
+  it('空白输入返回 null（未输入）', () => {
+    expect(detectAlgoByHash('')).toBeNull()
+    expect(detectAlgoByHash('   ')).toBeNull()
+  })
+
+  it('非十六进制或不支持长度返回空串（无法识别）', () => {
+    expect(detectAlgoByHash('xyz')).toBe('')
+    expect(detectAlgoByHash('a'.repeat(16))).toBe('')
+    expect(detectAlgoByHash(`1a2b3c4g`)).toBe('')
+  })
+
+  it('忽略首尾空白', () => {
+    expect(detectAlgoByHash('  1A2B3C4D  ')).toBe('crc32')
+  })
+})
+
+describe('任务会话扫描态', () => {
+  it('Start 返回 scanning 时初始进度为扫描态', async () => {
+    mocks.StartHashTask.mockResolvedValueOnce({
+      ok: true,
+      taskId: 't11',
+      total: 0,
+      totalBytes: 0,
+      scanning: true,
+    })
+    const session = createTaskSession()
+    const ok = await session.startHash(['D:\\big-folder'], ['sha256'])
+    expect(ok).toBe(true)
+    expect(session.progress.value?.scanning).toBe(true)
+    session.destroy()
   })
 })

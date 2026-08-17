@@ -25,6 +25,8 @@ export interface Result {
   total: number
   totalBytes: number
   algo?: string
+  /** 任务先异步扫描目录：总量/字节数随首个非扫描态进度事件下发（此时为 0） */
+  scanning?: boolean
 }
 
 export type ItemStatus = 'ok' | 'occupied' | 'no_permission' | 'not_found' | 'error' | 'canceled'
@@ -52,6 +54,8 @@ export interface ProgressEvent {
   currentFile: string
   speedMBps: number
   elapsedMs: number
+  /** 目录展开阶段：此时 done 是已发现文件数，total/字节字段尚无意义 */
+  scanning?: boolean
 }
 
 export interface ItemsEvent {
@@ -73,6 +77,8 @@ export interface DoneEvent {
   totalBytes: number
   /** 任务 goroutine panic 时的错误信息（后端兜底防护，正常为空） */
   fatal?: string
+  /** 任务异步失败（如展开后没有可计算的文件）：toast 展示，不显示汇总条 */
+  error?: AppError
 }
 
 // ---------- 算法常量 ----------
@@ -90,6 +96,30 @@ export const ALGO_LABELS: Record<string, string> = {
 
 export function algoLabel(a: string): string {
   return ALGO_LABELS[a] ?? a.toUpperCase()
+}
+
+/**
+ * 按期望哈希的十六进制长度识别算法：8=CRC32、32=MD5、40=SHA-1、64=SHA-256、128=SHA-512。
+ * 返回 null 表示未输入，'' 表示无法识别（非十六进制或长度不支持）。
+ */
+export function detectAlgoByHash(input: string): Algo | null | '' {
+  const h = input.trim().toLowerCase()
+  if (!h) return null
+  if (!/^[0-9a-f]+$/.test(h)) return ''
+  switch (h.length) {
+    case 8:
+      return 'crc32'
+    case 32:
+      return 'md5'
+    case 40:
+      return 'sha1'
+    case 64:
+      return 'sha256'
+    case 128:
+      return 'sha512'
+    default:
+      return ''
+  }
 }
 
 // ---------- 错误展示 ----------
@@ -269,6 +299,7 @@ export function createTaskSession() {
       currentFile: '',
       speedMBps: 0,
       elapsedMs: 0,
+      scanning: r.scanning ?? false,
     }
     return true
   }

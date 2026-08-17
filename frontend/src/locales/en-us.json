@@ -74,7 +74,8 @@
     "items": "Items",
     "speed": "Speed",
     "elapsed": "Elapsed",
-    "noFile": "Preparing…"
+    "noFile": "Preparing…",
+    "scanning": "Scanning folders… {count} files found"
   },
   "hash": {
     "pickFiles": "Select Files",
@@ -94,9 +95,9 @@
     "pickFile": "Select File",
     "fileLabel": "File to verify",
     "expectedLabel": "Expected hash",
-    "expectedPlaceholder": "Paste an MD5 / SHA-1 / SHA-256 / SHA-512 hash",
+    "expectedPlaceholder": "Paste an MD5 / SHA-1 / SHA-256 / SHA-512 / CRC32 hash",
     "detected": "Detected",
-    "unknown": "Unrecognized: enter a 32 / 40 / 64 / 128-char hex hash",
+    "unknown": "Unrecognized: enter an 8 / 32 / 40 / 64 / 128-char hex hash",
     "needFile": "Select a file first",
     "needHash": "Paste the expected hash first",
     "computeFailed": "Failed to hash the file",

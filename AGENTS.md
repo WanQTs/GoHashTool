@@ -9,7 +9,7 @@
 四大功能页：
 
 - **哈希计算（hash）**：多选文件、文件夹递归、整窗拖拽添加；MD5 / SHA-1 / SHA-256 / SHA-512 / CRC32 多算法一次扫描；结果表格虚拟滚动（十万级行数）；点击哈希值复制。遍历中不可读的子目录会生成为「无权限」结果行，不静默漏算。
-- **单文件校验（verify）**：粘贴期望哈希，按长度自动识别算法（32=MD5、40=SHA-1、64=SHA-256、128=SHA-512），给出「一致 / 不一致」结论。
+- **单文件校验（verify）**：粘贴期望哈希，按长度自动识别算法（8=CRC32、32=MD5、40=SHA-1、64=SHA-256、128=SHA-512），给出「一致 / 不一致」结论。
 - **双文件对比（compare）**：选两个文件同算法对比，并排展示。
 - **批量校验（batch）**：导入 md5sum/sha256sum 标准清单（.sha256/.sha1/.sha512/.md5/.txt/.sum/.sums，支持 `#` 注释行），算法识别为扩展名与哈希长度交叉校验（冲突即报 `ext_algo_mismatch`），无已知扩展名时按长度推断；基准目录可切换；输出 通过/不一致/缺失/无法读取 四类统计与明细（占用/无权限等「存在但读不了」结论为 `error`，**不计入缺失**）；一键导出问题项。
 
@@ -106,18 +106,18 @@ tools/smoke-test.ps1     冒烟测试脚本（selftest 退出码 / 启动耗时 
 
 ### 后端分层
 
-- **`internal/hashcore`**（纯 Go）：`Algorithm` 类型与五种算法常量；`ParseAlgorithm`（不区分大小写、允许连字符）；`DetectByLength`；`CanonicalKey`（路径去重键：Clean 规范化 + Windows 大小写折叠，ExpandPathsDetailed 与 checksum.ResolveTargets 共用）；`ExpandPathsDetailed`（目录递归、跳过非常规文件、已删除文件以 Size=-1 保留、按 CanonicalKey 去重——重叠的文件夹/文件选择只算一次；遍历出错经 `walkErrAction`：目录不可读跳过子树**并记录到 skippedDirs 返回**、文件级错误只跳过该文件）；`ExpandPaths` 为其便捷封装（丢弃跳过列表，仅供不需要展示的调用方/旧测试）；`HashFiles` 引擎——
+- **`internal/hashcore`**（纯 Go）：`Algorithm` 类型与五种算法常量；`ParseAlgorithm`（不区分大小写、允许连字符）；`DetectByLength`；`CanonicalKey`（路径去重键：Clean 规范化 + Windows 大小写折叠，ExpandPathsDetailed 与 checksum.ResolveTargets 共用）；`ExpandPathsDetailedContext`（目录递归、跳过非常规文件、已删除文件以 Size=-1 保留、按 CanonicalKey 去重——重叠的文件夹/文件选择只算一次；遍历出错经 `walkErrAction`：目录不可读跳过子树**并记录到 skippedDirs 返回**、文件级错误只跳过该文件；**ctx 取消立即终止遍历并返回错误**，`onScan` 每纳入一个文件回调一次供扫描进度上报）；`ExpandPathsDetailed` / `ExpandPaths` 为其不可取消便捷封装（后者再丢弃跳过列表，仅供不需要展示的调用方/旧测试）；`HashFiles` 引擎——
   - 流式读取 + 自适应缓冲：<64MB 用 1MB 缓冲、大文件 16MB 缓冲，全部经 `sync.Pool`（存 `*[]byte` 避免装箱）复用，任意大小文件内存恒定；
   - 大文件（≥64MB）走单 worker 双缓冲流水线（prefetch goroutine 预读，IO 与哈希计算重叠）；小文件走 worker pool 并发 `min(NumCPU, 8)`，派发通道带缓冲（workers*4）减少十万级文件的交接阻塞；
   - 多算法经 `io.MultiWriter` 一次扫描；
   - 错误分类为状态码：`ok / canceled / not_found / no_permission / occupied / error`（Windows 的 ERROR_SHARING_VIOLATION(32) 与 ERROR_LOCK_VIOLATION(33) 用数值判断，归类为 occupied）。
   - 注意：流水线读 goroutine 的纯错误分块 `bp` 为 nil，消费端仅 `bp != nil` 时才回池（nil 回池会让后续 Get 到它的计算 nil 解引用 panic）。
 - **`internal/checksum`**（纯 Go）：`ParseManifest` 解析 md5sum/sha256sum 标准格式，兼容 `*文件名` 二进制标记、GNU 行首 `\` 转义、文件名含空格、UTF-8 BOM、CRLF/LF 混用、`#` 注释行（直接跳过）；`DetectAlgorithm`（已知扩展名与哈希长度**交叉校验**：冲突报 `ext_algo_mismatch` 并给行号；无已知扩展名时按长度推断，长度混杂报 `mixed_length`）；`ResolveTargets`（条目 → 待算/缺失/期望值映射，相对路径按基准目录解析，按 CanonicalKey 去重且首条胜出）；`EqualHash`（忽略大小写）；`WriteSUM`（与解析互逆，闭环）与 `WriteCSV`（UTF-8 BOM，校验场景附加 expected/actual/verdict 三列）；`Error` 结构携带 Code 与行号。
-- **`app.go`**（Wails v3 服务层）：`App` 经 `application.NewService` 注册，导出方法即绑定方法（生成的 TS 按方法 ID 调用）。`attach(app)` 由 main 注入应用句柄；事件经 `a.app.Event.Emit` 推送；对话框经 `a.app.Dialog.OpenFileWithOptions/SaveFileWithOptions`（**标题由前端按当前语言传入**）；剪贴板 `a.app.Clipboard.SetText`；日志 `a.app.Logger`。所有绑定方法返回统一的 `Result`（`ok` + `error` + 数据字段）；`StartHashTask` / `StartVerifyTask` 异步启动任务并立即返回 `taskId`（`t<N>` 序号单调递增，前端据此过滤跨任务残余事件），之后通过三个事件推送：`hash:progress`（200ms 节流）、`hash:items`（单次 ≤500 条）、`hash:done`；`CancelTask` 取消（1 秒内生效）——**取消句柄随 newTask 入表同步登记**，Start 返回即点取消不会落空；`ExportCSV` / `ExportSUM` 复用任务结束后保留在 `taskState.items` 中的结果，写出经 `writeExport` 先写临时文件再 rename（原子替换）；`ExportSUM` 先经 `exportableSUMCount` 预检，无可写行返回 `no_data`，CRC32 返回 `algo_not_exportable`；`runTask` 收尾统一在 defer 完成（recover 兜底 panic → `hash:done` 带 `fatal` 字段；发 `hash:done` 前先停并等待进度 ticker goroutine 退出再冲刷结果行，保证 done 之后不再有事件）；结果行 flush 全程持锁（置换+发射一体），worker 与 ticker 并发触发也不会乱序；已完成任务仅保留最近 4 个（`maxFinishedTasks`），超出淘汰最旧者。批量校验单行结论由纯函数 `verdictFor` 给出：OK→pass/fail、not_found→missing、其余（occupied/no_permission/error/canceled）→**error**。
+- **`app.go`**（Wails v3 服务层）：`App` 经 `application.NewService` 注册，导出方法即绑定方法（生成的 TS 按方法 ID 调用）。`attach(app)` 由 main 注入应用句柄；事件经 `a.app.Event.Emit` 推送；对话框经 `a.app.Dialog.OpenFileWithOptions/SaveFileWithOptions`（**标题由前端按当前语言传入**）；剪贴板 `a.app.Clipboard.SetText`；日志 `a.app.Logger`。所有绑定方法返回统一的 `Result`（`ok` + `error` + 数据字段）；`StartHashTask` / `StartVerifyTask` 异步启动任务并立即返回 `taskId`（`t<N>` 序号单调递增，前端据此过滤跨任务残余事件），之后通过三个事件推送：`hash:progress`（200ms 节流）、`hash:items`（单次 ≤500 条）、`hash:done`；**目录展开在任务 goroutine 内进行**（`ExpandPathsDetailedContext`，可取消），扫描期间 `hash:progress` 带 `scanning` 标记、`done` 为已发现文件数，展开完成后总量才确定并随后续事件下发；展开后零文件的任务经 `hash:done` 的 `error` 字段（`no_files`）异步报错，由前端 toast；`CancelTask` 取消（1 秒内生效）——**取消句柄随 newTask 入表同步登记**，Start 返回即点取消不会落空；`ExportCSV` / `ExportSUM` 复用任务结束后保留在 `taskState.items` 中的结果，写出经 `writeExport` 在目标目录建唯一临时文件（`os.CreateTemp`）再 rename（原子替换），全程 `exportMu` 串行（Windows 上并发 rename 覆盖同一目标会间歇性 Access denied）；`ExportSUM` 先经 `exportableSUMCount` 预检，无可写行返回 `no_data`，CRC32 返回 `algo_not_exportable`；`runTask` 收尾统一在 defer 完成（recover 兜底 panic → `hash:done` 带 `fatal` 字段；发 `hash:done` 前先停并等待进度 ticker goroutine 退出再冲刷结果行，保证 done 之后不再有事件）；结果行 flush 全程持锁（置换+发射一体），worker 与 ticker 并发触发也不会乱序；已完成任务仅保留最近 4 个（`maxFinishedTasks`），超出淘汰最旧者。批量校验单行结论由纯函数 `verdictFor` 给出：OK→pass/fail、not_found→missing、其余（occupied/no_permission/error/canceled）→**error**。
 
 ### 前端约定
 
-- **`frontend/src/api/index.ts` 是前端与 Go 后端交互的唯一入口**（文件头注释明确规定：视图不直接引用 bindings / @wailsio/runtime）。其中的 `Result` / `Item` / `ProgressEvent` / `ItemsEvent` / `DoneEvent` 接口与后端 JSON 契约一一对应，改后端结构体时必须同步修改。
+- **`frontend/src/api/index.ts` 是前端与 Go 后端交互的唯一入口**（文件头注释明确规定：视图不直接引用 bindings / @wailsio/runtime）。其中的 `Result` / `Item` / `ProgressEvent` / `ItemsEvent` / `DoneEvent` 接口与后端 JSON 契约一一对应，改后端结构体时必须同步修改。单文件校验的算法长度识别 `detectAlgoByHash`（8=CRC32、32=MD5、40=SHA-1、64=SHA-256、128=SHA-512）也在此层，供视图与 vitest 复用。
 - 事件订阅用 `@wailsio/runtime` 的 `Events.On(name, cb)`（事件负载在 `ev.data`），**返回单个监听的取消函数**；`createTaskSession()` 封装一次任务的事件订阅（按 taskId 过滤）、结果累积与生命周期；**视图必须在 `onBeforeUnmount` 调用 `destroy()`**。**禁止用 `Events.Off(name)`**（会把其他会话的同名监听一并移除）。大列表用 `shallowRef`。事件归属由 `acceptTaskEvent` 判定：starting 窗口只接受序号大于基线的 `t<N>` 事件，防止跨任务残余事件串扰。
 - 整窗拖拽链路：`index.html` 的 `<body data-file-drop-target>` 声明落点（v3 必需，落点外的拖放会被忽略）→ 悬停高亮由 Wails 自动给该元素加 `file-drop-target-active` class（见 style.css，v2 的 `--wails-drop-target`/`wails-drop-target-active` 已废弃）→ Go 侧 `OnWindowEvent(events.Common.WindowFilesDropped)` 取绝对路径并 `Event.Emit("files-dropped", paths)` → `app.vue` 订阅后 `dispatchDrop`：恰拖入一个清单文件 → 跳转 `/batch` 并自动开始校验；否则 → 跳 `/` 哈希计算。
 - **结果快照约定**：任务启动时把本次实际使用的输入存入快照（hash 页 `usedAlgos`、verify 页 `usedExpected/usedAlgo`、compare 页 `usedAlgos/usedPaths`），结果区/导出只读快照——任务完成后用户改输入不会污染旧结果展示。
@@ -138,11 +138,11 @@ tools/smoke-test.ps1     冒烟测试脚本（selftest 退出码 / 启动耗时 
 ## 测试
 
 - `go test ./...`：三个包均有测试；涉及并发回调路径改动时须再跑 `go test -race ./...`（需要 CGO/gcc）。
-  - 根包 `app_test.go`：绑定层纯逻辑（parseAlgos、manifestError 双语映射、countSummary、exportableSUMCount、verdictFor 结论映射、newTask 取消句柄登记、CRC32 导出拒绝、任务淘汰），不启动 Wails。
-  - `internal/hashcore/hashcore_test.go`：单元测试，含 "abc"/空文件已知值、70MB 大文件（刚过 64MB 流水线阈值）与标准库一致性、流水线与流式两条路径的取消、错误分类、ExpandPaths/ExpandPathsDetailed 去重、walkErrAction 遍历错误策略、CanonicalKey 大小写折叠等；`bench_test.go` 为性能基准（夹具：1GB 大文件 + 1 万个 1KB 小文件，跨 benchmark 复用，`TestMain` 负责清理）。**onItem 回调在多 worker goroutine 并发触发，测试中收集结果必须加锁**（曾因未加锁被 race 检测抓到）。
+  - 根包 `app_test.go`：绑定层纯逻辑（parseAlgos、manifestError 双语映射、countSummary、exportableSUMCount、verdictFor 结论映射、newTask 取消句柄登记、CRC32 导出拒绝、writeExport 并发导出唯一临时名、任务淘汰），不启动 Wails。
+  - `internal/hashcore/hashcore_test.go`：单元测试，含 "abc"/空文件已知值、70MB 大文件（刚过 64MB 流水线阈值）与标准库一致性、流水线与流式两条路径的取消、错误分类、ExpandPaths/ExpandPathsDetailed 去重、ExpandPathsDetailedContext 取消与扫描回调、walkErrAction 遍历错误策略、CanonicalKey 大小写折叠等；`bench_test.go` 为性能基准（夹具：1GB 大文件 + 1 万个 1KB 小文件，跨 benchmark 复用，`TestMain` 负责清理）。**onItem 回调在多 worker goroutine 并发触发，测试中收集结果必须加锁**（曾因未加锁被 race 检测抓到）。
   - `internal/checksum/checksum_test.go`：清单解析（含 `#` 注释行）、算法识别（扩展名×长度交叉校验、mixed_length）、转义往返、CSV 校验列、ResolveTargets 去重/缺失归类/Windows 大小写折叠的单元测试；`integration_test.go` 的 `TestSUMRoundTrip` 覆盖 计算 → 导出 SUM → 重新导入解析 → 识别算法 → 重新计算 → 全部通过 的闭环。
 - 新增纯逻辑优先放进 `internal/hashcore` / `internal/checksum`（不依赖 Wails，可直接单测）；`app.go` 只做绑定与编排，可拆出的纯函数（如 countSummary、exportableSUMCount、verdictFor）拆出以便测试。
-- 前端用 vitest 跑纯函数单测（`npm run test`，覆盖 utils/format 与 api 的拖拽路由、错误文案、事件过滤、任务会话订阅退订）；视图层验证手段仍是 `vue-tsc` 类型检查 + `wails3 dev` 手测。vitest 对 `@wailsio/runtime` 与生成的 bindings 用 `vi.mock` 隔离。
+- 前端用 vitest 跑纯函数单测（`npm run test`，覆盖 utils/format 与 api 的拖拽路由、错误文案、事件过滤、任务会话订阅退订、算法长度识别）；视图层验证手段仍是 `vue-tsc` 类型检查 + `wails3 dev` 手测。vitest 对 `@wailsio/runtime` 与生成的 bindings 用 `vi.mock` 隔离。
 - `selftest.go` 提供 exe 级功能自检：`gohash.exe --selftest` 不开 GUI 跑已知值/SUM 闭环/清单解析，以退出码报告；`tools/smoke-test.ps1` 先验 selftest 退出码，再测启动耗时（目标 <2s）、启动后 RSS（目标增量 <100MB）、截图。
 
 ## 安全与可靠性考虑

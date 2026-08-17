@@ -58,6 +58,14 @@ watch(sumOptions, (opts) => {
   if (!opts.some((o) => o.value === sumAlgo.value)) sumAlgo.value = opts[0]?.value ?? ''
 })
 
+// 任务异步失败（如目录展开后没有可计算的文件）：toast 提示，不显示汇总条。
+watch(
+  () => session.summary.value?.error,
+  (e) => {
+    if (e) message.error(errorText(e, settings.locale))
+  },
+)
+
 const avgSpeed = computed(() =>
   summary.value ? formatSpeed(avgSpeedMBps(summary.value.bytesDone, summary.value.elapsedMs)) : '',
 )
@@ -190,7 +198,7 @@ onBeforeUnmount(() => {
 
     <progress-panel v-if="running" :progress="progress" :running="running" @cancel="onCancel" />
 
-    <template v-if="summary">
+    <template v-if="summary && !summary.error">
       <div class="summary-bar">
         <div class="stat-card">
           <span class="stat-label">{{ t('common.total') }}</span>
@@ -254,7 +262,7 @@ onBeforeUnmount(() => {
 
     <result-table v-if="items.length" :items="items" :algos="tableAlgos" mode="hash" />
 
-    <div v-else-if="!running && !summary" class="empty-wrap">
+    <div v-else-if="!running && (!summary || !!summary.error)" class="empty-wrap">
       <n-empty :description="t('hash.empty')">
         <template #extra>
           <span class="empty-desc">{{ t('hash.emptyDesc') }}</span>

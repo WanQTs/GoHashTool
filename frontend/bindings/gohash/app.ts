@@ -88,7 +88,10 @@ export function PickSavePath(defaultName: string, filterName: string, pattern: s
 }
 
 /**
- * StartHashTask 启动哈希计算任务（异步），立即返回 taskId 与总量，
+ * StartHashTask 启动哈希计算任务（异步），立即返回 taskId。
+ * 目录展开在任务 goroutine 内进行（ExpandPathsDetailedContext）：超大目录树
+ * 不再阻塞绑定调用，扫描期间经 hash:progress 的 scanning 标记上报已发现文件数，
+ * 且随 CancelTask 可取消；展开完成后总量才确定，经后续进度/完成事件下发。
  * 进度/结果通过 hash:progress / hash:items / hash:done 事件推送。
  */
 export function StartHashTask(paths: string[], algos: string[]): $CancellablePromise<$models.Result> {

@@ -85,7 +85,17 @@ func ExpandPaths(paths []string) []FileItem {
 
 // ExpandPathsDetailed 是 ExpandPaths 的完整版：额外返回遍历中因不可读而
 // 被跳过的目录，供调用方生成可见的错误行（禁止静默吞错：子树未计入必须让用户知道）。
+// 不可取消、无扫描回调的便捷封装；需要取消/进度时用 ExpandPathsDetailedContext。
 func ExpandPathsDetailed(paths []string) (items []FileItem, skippedDirs []string) {
+	items, skippedDirs, _ = ExpandPathsDetailedContext(context.Background(), paths, nil)
+	return items, skippedDirs
+}
+
+// ExpandPathsDetailedContext 在 ExpandPathsDetailed 之上增加取消与扫描进度：
+// ctx 取消时立即终止遍历并返回该错误（items/skippedDirs 为已收集的部分结果，
+// 调用方按取消处理、不得当作完整清单使用）；onScan 非 nil 时每纳入一个文件
+// 回调一次（path 为刚发现的文件，found 为当前累计数），供上层做节流进度展示。
+func ExpandPathsDetailedContext(ctx context.Context, paths []string, onScan func(path string, found int)) (items []FileItem, skippedDirs []string, err error) {
 	seen := make(map[string]struct{})
 	add := func(p string, size int64) {
 		key := CanonicalKey(p)
@@ -94,10 +104,16 @@ func ExpandPathsDetailed(paths []string) (items []FileItem, skippedDirs []string
 		}
 		seen[key] = struct{}{}
 		items = append(items, FileItem{Path: p, Size: size})
+		if onScan != nil {
+			onScan(p, len(items))
+		}
 	}
 	for _, p := range paths {
-		info, err := os.Stat(p)
-		if err != nil {
+		if err := ctx.Err(); err != nil {
+			return items, skippedDirs, err
+		}
+		info, statErr := os.Stat(p)
+		if statErr != nil {
 			add(p, -1)
 			continue
 		}
@@ -110,7 +126,10 @@ func ExpandPathsDetailed(paths []string) (items []FileItem, skippedDirs []string
 		// 目录递归：遍历出错时目录读不动才跳过其子树；文件级错误
 		// （如遍历过程中被删除）只跳过该文件——SkipDir 作用于文件会
 		// 连带跳过同目录的其余文件，造成静默漏算。
-		_ = filepath.WalkDir(p, func(path string, d fs.DirEntry, err error) error {
+		walkErr := filepath.WalkDir(p, func(path string, d fs.DirEntry, err error) error {
+			if cerr := ctx.Err(); cerr != nil {
+				return cerr
+			}
 			if err != nil {
 				action := walkErrAction(d, err)
 				if action == filepath.SkipDir { // 不可读子树：记录下来交由上层展示
@@ -128,8 +147,13 @@ func ExpandPathsDetailed(paths []string) (items []FileItem, skippedDirs []string
 			add(path, fi.Size())
 			return nil
 		})
+		// 回调只会返回 nil / SkipDir / ctx.Err()；WalkDir 把 SkipDir 消化在
+		// 内部，向上传播的非 nil 错误只可能来自 ctx 取消。
+		if walkErr != nil {
+			return items, skippedDirs, walkErr
+		}
 	}
-	return items, skippedDirs
+	return items, skippedDirs, nil
 }
 
 // walkErrAction 决定 WalkDir 遇到错误时如何继续（提取为独立函数以便单测）：

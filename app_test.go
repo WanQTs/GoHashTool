@@ -5,9 +5,13 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"gohash/internal/checksum"
@@ -194,5 +198,42 @@ func TestExportSUMRejectsCRC32(t *testing.T) {
 	r := a.ExportSUM(id, filepath.Join(t.TempDir(), "out.crc32"), "crc32")
 	if r.OK || r.Error == nil || r.Error.Code != "algo_not_exportable" {
 		t.Errorf("crc32 export: got %+v, want algo_not_exportable error", r)
+	}
+}
+
+// TestWriteExportConcurrent 同路径并发导出使用唯一临时文件（os.CreateTemp），
+// 互不干扰；最终内容是某一次的完整写入，且目录下无残留临时文件。
+func TestWriteExportConcurrent(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "out.csv")
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			if err := writeExport(target, func(w io.Writer) error {
+				_, err := fmt.Fprintf(w, "row-%d\n", i)
+				return err
+			}); err != nil {
+				t.Errorf("writeExport: %v", err)
+			}
+		}(i)
+	}
+	wg.Wait()
+	data, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(string(data), "row-") || !strings.HasSuffix(string(data), "\n") {
+		t.Errorf("content must be one complete write, got %q", data)
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		if e.Name() != "out.csv" {
+			t.Errorf("leftover temp file: %s", e.Name())
+		}
 	}
 }

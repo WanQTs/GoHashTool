@@ -29,12 +29,13 @@ type AppError struct {
 type Result struct {
 	OK         bool      `json:"ok"`
 	Error      *AppError `json:"error,omitempty"`
-	Paths      []string  `json:"paths,omitempty"`  // 多选路径
-	Path       string    `json:"path,omitempty"`   // 单选路径
-	TaskID     string    `json:"taskId,omitempty"` // 任务 ID
-	Total      int       `json:"total"`            // 条目总数
-	TotalBytes int64     `json:"totalBytes"`       // 总字节数
-	Algo       string    `json:"algo,omitempty"`   // 批量校验识别出的算法
+	Paths      []string  `json:"paths,omitempty"`    // 多选路径
+	Path       string    `json:"path,omitempty"`     // 单选路径
+	TaskID     string    `json:"taskId,omitempty"`   // 任务 ID
+	Total      int       `json:"total"`              // 条目总数
+	TotalBytes int64     `json:"totalBytes"`         // 总字节数
+	Algo       string    `json:"algo,omitempty"`     // 批量校验识别出的算法
+	Scanning   bool      `json:"scanning,omitempty"` // 任务先异步扫描目录，总量经后续进度事件下发
 }
 
 // Item 结果行（哈希计算与批量校验共用；校验场景带 Expected/Actual/Verdict）。
@@ -61,6 +62,9 @@ type ProgressEvent struct {
 	CurrentFile string  `json:"currentFile"`
 	SpeedMBps   float64 `json:"speedMBps"`
 	ElapsedMs   int64   `json:"elapsedMs"`
+	// Scanning 为 true 表示任务仍在目录展开阶段：此时 Done 是已发现文件数，
+	// Total/字节字段尚无意义，前端应展示扫描进度而非完成百分比。
+	Scanning bool `json:"scanning,omitempty"`
 }
 
 // ItemsEvent 结果行批量推送负载（hash:items，单次不超过 500 条）。
@@ -83,6 +87,9 @@ type Summary struct {
 	BytesDone  int64  `json:"bytesDone"`
 	BytesTotal int64  `json:"totalBytes"`
 	Fatal      string `json:"fatal,omitempty"` // 任务 goroutine panic 时的错误信息（兜底防护，正常为空）
+	// Error 任务异步失败（如目录展开后没有可计算的文件）：与 Fatal 的 panic
+	// 兜底不同，这是可预期的业务结果，前端 toast 展示而不显示汇总条。
+	Error *AppError `json:"error,omitempty"`
 }
 
 // taskState 运行中/已完成任务的状态；items 保留供导出复用。
@@ -205,35 +212,40 @@ func (a *App) CopyText(text string) Result {
 
 // ---------- 任务 ----------
 
-// StartHashTask 启动哈希计算任务（异步），立即返回 taskId 与总量，
+// StartHashTask 启动哈希计算任务（异步），立即返回 taskId。
+// 目录展开在任务 goroutine 内进行（ExpandPathsDetailedContext）：超大目录树
+// 不再阻塞绑定调用，扫描期间经 hash:progress 的 scanning 标记上报已发现文件数，
+// 且随 CancelTask 可取消；展开完成后总量才确定，经后续进度/完成事件下发。
 // 进度/结果通过 hash:progress / hash:items / hash:done 事件推送。
 func (a *App) StartHashTask(paths []string, algos []string) Result {
 	parsed, r := parseAlgos(algos)
 	if !r.OK {
 		return r
 	}
-	items, skippedDirs := hashcore.ExpandPathsDetailed(paths)
-	// 不可读子目录不作为静默跳过：生成 no_permission 结果行前置展示，
-	// 让用户明确知道这些子树未计入（行数计入总数与失败统计）。
-	preItems := make([]Item, 0, len(skippedDirs))
-	for _, d := range skippedDirs {
-		preItems = append(preItems, Item{
-			Path: d, Name: filepath.Base(d),
-			Status:  string(hashcore.StatusNoPermission),
-			ErrCode: string(hashcore.StatusNoPermission),
-		})
-	}
-	if len(items) == 0 && len(preItems) == 0 {
-		return errResult("no_files", "没有可计算的文件", "No files to hash", nil)
-	}
 	// ctx/cancel 必须在任务入表前同步创建并随 newTask 一起登记：
 	// 否则 Start 返回到 runTask 写入 st.cancel 之间存在窗口，
 	// 立刻点取消会得到「任务不存在或已结束」。
 	ctx, cancel := context.WithCancel(a.baseContext())
 	taskID, st := a.newTask(algos, false, cancel)
-	total := len(items) + len(preItems)
-	go a.runTask(ctx, taskID, st, items, parsed, nil, preItems, total, hashcore.TotalSize(items))
-	return Result{OK: true, TaskID: taskID, Total: total, TotalBytes: hashcore.TotalSize(items)}
+	scan := func(onScan func(path string, found int)) ([]hashcore.FileItem, []Item, error) {
+		items, skippedDirs, err := hashcore.ExpandPathsDetailedContext(ctx, paths, onScan)
+		if err != nil {
+			return nil, nil, err
+		}
+		// 不可读子目录不作为静默跳过：生成 no_permission 结果行前置展示，
+		// 让用户明确知道这些子树未计入（行数计入总数与失败统计）。
+		preItems := make([]Item, 0, len(skippedDirs))
+		for _, d := range skippedDirs {
+			preItems = append(preItems, Item{
+				Path: d, Name: filepath.Base(d),
+				Status:  string(hashcore.StatusNoPermission),
+				ErrCode: string(hashcore.StatusNoPermission),
+			})
+		}
+		return items, preItems, nil
+	}
+	go a.runTask(ctx, taskID, st, parsed, nil, scan)
+	return Result{OK: true, TaskID: taskID, Scanning: true}
 }
 
 // StartVerifyTask 启动批量校验任务：解析清单 → 识别算法 → 以基准目录解析
@@ -268,10 +280,15 @@ func (a *App) StartVerifyTask(manifestPath, baseDir string) Result {
 	}
 
 	// 同 StartHashTask：取消句柄随任务入表同步登记，不留取消窗口。
+	// 清单解析与目标探测已在上面同步完成（清单是小文件，毫秒级），
+	// scan 闭包直接返回现成结果，与哈希任务共用同一条 runTask 路径。
 	ctx, cancel := context.WithCancel(a.baseContext())
 	taskID, st := a.newTask([]string{string(algo)}, true, cancel)
+	scan := func(func(string, int)) ([]hashcore.FileItem, []Item, error) {
+		return toHash, preItems, nil
+	}
 	total := len(toHash) + len(missing)
-	go a.runTask(ctx, taskID, st, toHash, []hashcore.Algorithm{algo}, expected, preItems, total, hashcore.TotalSize(toHash))
+	go a.runTask(ctx, taskID, st, []hashcore.Algorithm{algo}, expected, scan)
 	return Result{OK: true, TaskID: taskID, Total: total, TotalBytes: hashcore.TotalSize(toHash), Algo: string(algo)}
 }
 
@@ -355,14 +372,21 @@ func (a *App) ExportSUM(taskID, path, algo string) Result {
 	return Result{OK: true, Path: path}
 }
 
-// writeExport 原子导出：先写 `path + ".tmp"` 临时文件，写出并关闭成功后再
+// exportMu 串行化导出写盘：Windows 上多个 rename 并发覆盖同一目标会间歇性
+// Access denied（delete-pending 竞态）；导出是低频小文件操作，串行代价可忽略。
+var exportMu sync.Mutex
+
+// writeExport 原子导出：在目标目录创建唯一临时文件（os.CreateTemp——固定的
+// `目标.tmp` 文件名在并发导出/多实例场景会互相覆盖），写出并关闭成功后再
 // rename 覆盖目标；任何一步失败都删除临时文件，避免留下半截导出文件。
 func writeExport(path string, write func(io.Writer) error) error {
-	tmp := path + ".tmp"
-	f, err := os.Create(tmp)
+	exportMu.Lock()
+	defer exportMu.Unlock()
+	f, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".*.tmp")
 	if err != nil {
 		return err
 	}
+	tmp := f.Name()
 	ok := false
 	defer func() {
 		if !ok {
@@ -431,28 +455,32 @@ func (a *App) getTask(taskID string) (*taskState, Result) {
 	return st, Result{OK: true}
 }
 
-// runTask 引擎驱动：进度 200ms 节流上报，结果行批量推送（单次 ≤500 条）。
+// runTask 引擎驱动：先执行 scan 做目录展开（可取消；扫描期间经 ticker 以
+// scanning 标记节流上报已发现文件数），再交给 HashFiles 计算。
+// 进度 200ms 节流上报，结果行批量推送（单次 ≤500 条）。
 // ctx 由启动方同步创建（取消句柄随任务入表，见 StartHashTask）。
 // 收尾统一在 defer 完成（recover 兜底 → 停 ticker → 冲刷结果行 → 发 hash:done），
 // panic 时也会发出带 fatal 的完成事件，绝不让进程崩溃或前端卡在运行态。
-func (a *App) runTask(ctx context.Context, taskID string, st *taskState, items []hashcore.FileItem,
-	algos []hashcore.Algorithm, expected map[string]string, preItems []Item,
-	grandTotal int, totalBytes int64) {
+func (a *App) runTask(ctx context.Context, taskID string, st *taskState,
+	algos []hashcore.Algorithm, expected map[string]string,
+	scan func(onScan func(path string, found int)) ([]hashcore.FileItem, []Item, error)) {
 
 	start := time.Now()
 	var bytesDone atomic.Int64
 	doneCount := atomic.Int64{}
-	doneCount.Store(int64(len(preItems)))
 	var current atomic.Value
 	current.Store("")
 
+	// 扫描阶段状态：ticker 据此切换上报形态（scanning 期间 Done=已发现文件数，
+	// Total/字节字段在扫描完成后才发布，避免前端读到「非扫描态但总量为 0」）。
+	var scanning atomic.Bool
+	scanning.Store(true)
+	var scanFound atomic.Int64
+	var grandTotal atomic.Int64
+	var totalBytes atomic.Int64
+
 	var pmu sync.Mutex
-	pending := append([]Item(nil), preItems...)
-	if len(preItems) > 0 {
-		st.mu.Lock()
-		st.items = append(st.items, preItems...)
-		st.mu.Unlock()
-	}
+	var pending []Item
 
 	// flush 全程持锁（置换 + 发射一体）：onItem 与 ticker 可能并发触发 flush，
 	// 若置换后就放锁，两个 flush 的 EventsEmit 先后无序，结果行会乱序到达。
@@ -485,6 +513,14 @@ func (a *App) runTask(ctx context.Context, taskID string, st *taskState, items [
 			case <-stopTicker:
 				return
 			case now := <-t.C:
+				cur, _ := current.Load().(string)
+				if scanning.Load() { // 目录展开阶段：总量未知，上报已发现文件数
+					a.app.Event.Emit("hash:progress", ProgressEvent{
+						TaskID: taskID, Scanning: true, Done: int(scanFound.Load()),
+						CurrentFile: cur, ElapsedMs: time.Since(start).Milliseconds(),
+					})
+					continue
+				}
 				bd := bytesDone.Load()
 				dt := now.Sub(lastTime).Seconds()
 				speed := 0.0
@@ -492,10 +528,9 @@ func (a *App) runTask(ctx context.Context, taskID string, st *taskState, items [
 					speed = float64(bd-lastBytes) / dt / 1e6
 				}
 				lastBytes, lastTime = bd, now
-				cur, _ := current.Load().(string)
 				a.app.Event.Emit("hash:progress", ProgressEvent{
-					TaskID: taskID, Total: grandTotal, Done: int(doneCount.Load()),
-					BytesDone: bd, BytesTotal: totalBytes, CurrentFile: cur,
+					TaskID: taskID, Total: int(grandTotal.Load()), Done: int(doneCount.Load()),
+					BytesDone: bd, BytesTotal: totalBytes.Load(), CurrentFile: cur,
 					SpeedMBps: speed, ElapsedMs: time.Since(start).Milliseconds(),
 				})
 				flush()
@@ -510,6 +545,9 @@ func (a *App) runTask(ctx context.Context, taskID string, st *taskState, items [
 		st.done = true
 		a.mu.Unlock()
 	}()
+
+	// 扫描错误由主流程写入、收尾 defer 读取（非 nil 即扫描阶段被取消）。
+	var scanErr error
 
 	// 后注册、先执行：panic 兜底 + 收尾上报。
 	defer func() {
@@ -527,15 +565,44 @@ func (a *App) runTask(ctx context.Context, taskID string, st *taskState, items [
 		st.mu.Unlock()
 		sum := countSummary(all)
 		sum.TaskID = taskID
-		sum.Total = grandTotal
+		sum.Total = int(grandTotal.Load())
 		sum.Canceled = ctx.Err() != nil
 		sum.ElapsedMs = time.Since(start).Milliseconds()
 		sum.BytesDone = bytesDone.Load()
-		sum.BytesTotal = totalBytes
+		sum.BytesTotal = totalBytes.Load()
 		sum.Fatal = fatal
+		// 展开后一个可计算的文件都没有（空文件夹、全是非常规文件等）：
+		// 结构化错误随完成事件下发由前端 toast（改动前由 StartHashTask 同步返回）。
+		if fatal == "" && scanErr == nil && !sum.Canceled && sum.Total == 0 {
+			sum.Error = &AppError{Code: "no_files", Zh: "没有可计算的文件", En: "No files to hash"}
+		}
 		a.app.Event.Emit("hash:done", sum)
 	}()
 
+	// 阶段一：目录展开（在任务 goroutine 内进行，取消 1 个遍历步内生效）。
+	items, preItems, scanErr := scan(func(path string, found int) {
+		current.Store(path)
+		scanFound.Store(int64(found))
+	})
+	if scanErr == nil {
+		doneCount.Store(int64(len(preItems)))
+		if len(preItems) > 0 {
+			st.mu.Lock()
+			st.items = append(st.items, preItems...)
+			st.mu.Unlock()
+			pmu.Lock()
+			pending = append(pending, preItems...)
+			pmu.Unlock()
+		}
+		grandTotal.Store(int64(len(items) + len(preItems)))
+		totalBytes.Store(hashcore.TotalSize(items))
+	}
+	scanning.Store(false)
+	if scanErr != nil || grandTotal.Load() == 0 {
+		return // 扫描被取消或没有可计算的文件：由收尾 defer 发完成事件
+	}
+
+	// 阶段二：批量计算。
 	onStart := func(path string) { current.Store(path) }
 	onItem := func(r hashcore.Result) {
 		item := resultToItem(r)

@@ -13,6 +13,7 @@ import { useI18n } from 'vue-i18n'
 import {
   algoLabel,
   createTaskSession,
+  detectAlgoByHash,
   errorText,
   pickFiles,
   type Result,
@@ -33,25 +34,9 @@ const expected = ref('')
 const usedExpected = ref('')
 const usedAlgo = ref('')
 
-/** 粘贴值 trim + 小写后按长度识别：32=MD5、40=SHA-1、64=SHA-256、128=SHA-512。 */
+/** 粘贴值按长度识别算法（含 8 位 CRC32），识别逻辑见 api.detectAlgoByHash。 */
 const normalized = computed(() => expected.value.trim().toLowerCase())
-const detectedAlgo = computed<string | null | ''>(() => {
-  const h = normalized.value
-  if (!h) return null // 未输入
-  if (!/^[0-9a-f]+$/.test(h)) return '' // 非十六进制，无法识别
-  switch (h.length) {
-    case 32:
-      return 'md5'
-    case 40:
-      return 'sha1'
-    case 64:
-      return 'sha256'
-    case 128:
-      return 'sha512'
-    default:
-      return ''
-  }
-})
+const detectedAlgo = computed(() => detectAlgoByHash(expected.value))
 
 const canStart = computed(
   () => !!filePath.value && !!detectedAlgo.value && !running.value,

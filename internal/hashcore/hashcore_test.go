@@ -405,3 +405,56 @@ func TestCanonicalKey(t *testing.T) {
 		t.Errorf("non-windows key = %q, want clean path without folding", got)
 	}
 }
+
+// TestExpandPathsDetailedContextCancel 目录展开可被取消：扫描到一半取消 ctx，
+// 遍历必须尽快终止并返回 context.Canceled（部分结果不得当作完整清单使用）。
+func TestExpandPathsDetailedContextCancel(t *testing.T) {
+	dir := t.TempDir()
+	// 造足够多的文件（200 目录 × 50 文件），保证取消时遍历仍在进行。
+	for i := 0; i < 200; i++ {
+		sub := filepath.Join(dir, fmt.Sprintf("d%03d", i))
+		if err := os.Mkdir(sub, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		for j := 0; j < 50; j++ {
+			writeTempFile(t, sub, fmt.Sprintf("f%02d.txt", j), []byte("x"))
+		}
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	found := 0
+	_, _, err := ExpandPathsDetailedContext(ctx, []string{dir}, func(string, int) {
+		found++
+		if found == 100 { // 扫到 100 个时取消（总量 10000）
+			cancel()
+		}
+	})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v, want context.Canceled", err)
+	}
+	if found >= 10000 {
+		t.Errorf("scan should stop shortly after cancel, found = %d (total 10000)", found)
+	}
+}
+
+// TestExpandPathsDetailedContextScanCallback onScan 按纳入顺序递增报数，
+// 末次计数等于最终文件数（供上层做「已发现 N 个文件」的扫描进度）。
+func TestExpandPathsDetailedContextScanCallback(t *testing.T) {
+	dir := t.TempDir()
+	for i := 0; i < 5; i++ {
+		writeTempFile(t, dir, fmt.Sprintf("f%d.txt", i), []byte("x"))
+	}
+	var counts []int
+	items, _, err := ExpandPathsDetailedContext(context.Background(), []string{dir},
+		func(_ string, found int) { counts = append(counts, found) })
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 5 || len(counts) != 5 {
+		t.Fatalf("items = %d, counts = %v; want 5 items and 5 callbacks", len(items), counts)
+	}
+	for i, c := range counts {
+		if c != i+1 {
+			t.Fatalf("counts = %v, want 1..5", counts)
+		}
+	}
+}

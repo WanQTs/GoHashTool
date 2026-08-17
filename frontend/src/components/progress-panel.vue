@@ -19,9 +19,12 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
+/** 目录展开阶段：总量未知，显示扫描进度而非百分比。 */
+const scanning = computed(() => props.progress?.scanning ?? false)
+
 const percent = computed(() => {
   const p = props.progress
-  if (!p) return 0
+  if (!p || scanning.value) return 0
   if (p.totalBytes > 0) return Math.min(100, (p.bytesDone / p.totalBytes) * 100)
   if (p.total > 0) return Math.min(100, (p.done / p.total) * 100)
   return 0
@@ -60,12 +63,16 @@ watch(
       processing
     />
     <div class="progress-meta">
-      <span class="progress-file mono" :title="progress?.currentFile">{{ currentName }}</span>
-      <span class="progress-stat">{{ t('progress.items') }} {{ progress?.done ?? 0 }}/{{ progress?.total ?? 0 }}</span>
-      <span v-if="(progress?.totalBytes ?? 0) > 0" class="progress-stat">
-        {{ formatBytes(progress?.bytesDone ?? 0) }} / {{ formatBytes(progress?.totalBytes ?? 0) }}
+      <span class="progress-file mono" :title="progress?.currentFile">
+        {{ scanning ? t('progress.scanning', { count: progress?.done ?? 0 }) : currentName }}
       </span>
-      <span class="progress-stat">{{ formatSpeed(smoothSpeed) }}</span>
+      <template v-if="!scanning">
+        <span class="progress-stat">{{ t('progress.items') }} {{ progress?.done ?? 0 }}/{{ progress?.total ?? 0 }}</span>
+        <span v-if="(progress?.totalBytes ?? 0) > 0" class="progress-stat">
+          {{ formatBytes(progress?.bytesDone ?? 0) }} / {{ formatBytes(progress?.totalBytes ?? 0) }}
+        </span>
+        <span class="progress-stat">{{ formatSpeed(smoothSpeed) }}</span>
+      </template>
       <span class="progress-stat">{{ formatDuration(progress?.elapsedMs ?? 0) }}</span>
       <span class="toolbar-spacer" />
       <n-button size="tiny" tertiary type="error" :disabled="!running" @click="emit('cancel')">

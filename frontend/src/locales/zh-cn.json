@@ -74,7 +74,8 @@
     "items": "条目",
     "speed": "速度",
     "elapsed": "已用时间",
-    "noFile": "准备中…"
+    "noFile": "准备中…",
+    "scanning": "正在扫描目录…已发现 {count} 个文件"
   },
   "hash": {
     "pickFiles": "选择文件",
@@ -94,9 +95,9 @@
     "pickFile": "选择文件",
     "fileLabel": "待校验文件",
     "expectedLabel": "期望哈希值",
-    "expectedPlaceholder": "粘贴 MD5 / SHA-1 / SHA-256 / SHA-512 哈希值",
+    "expectedPlaceholder": "粘贴 MD5 / SHA-1 / SHA-256 / SHA-512 / CRC32 哈希值",
     "detected": "识别算法",
-    "unknown": "无法识别算法：请输入 32 / 40 / 64 / 128 位十六进制哈希值",
+    "unknown": "无法识别算法：请输入 8 / 32 / 40 / 64 / 128 位十六进制哈希值",
     "needFile": "请先选择文件",
     "needHash": "请粘贴期望哈希值",
     "computeFailed": "文件计算失败",

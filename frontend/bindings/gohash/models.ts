@@ -75,6 +75,11 @@ export class Result {
      */
     "algo"?: string;
 
+    /**
+     * 任务先异步扫描目录，总量经后续进度事件下发
+     */
+    "scanning"?: boolean;
+
     /** Creates a new Result instance. */
     constructor($$source: Partial<Result> = {}) {
         if (!("ok" in $$source)) {

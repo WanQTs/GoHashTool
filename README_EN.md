@@ -27,7 +27,7 @@ A Windows 64-bit desktop tool to compute, verify and compare file hashes. Built 
 ## ✨ Features
 
 - **Hash**: multi-select files, recursive folders, drop files anywhere in the window; MD5 / SHA-1 / SHA-256 / SHA-512 / CRC32 in a single scan; virtual-scrolled result table (handles 100k+ rows); click a hash to copy it. Unreadable subdirectories produce visible "no permission" rows — nothing is skipped silently.
-- **Verify**: paste an expected hash; the algorithm is auto-detected by length (32=MD5, 40=SHA-1, 64=SHA-256, 128=SHA-512) and a large banner states "Identical / Different".
+- **Verify**: paste an expected hash; the algorithm is auto-detected by length (8=CRC32, 32=MD5, 40=SHA-1, 64=SHA-256, 128=SHA-512) and a large banner states "Identical / Different".
 - **Compare**: pick two files and compare them side by side across the selected algorithms.
 - **Batch Verify**: import standard md5sum/sha256sum manifests (.sha256/.sha1/.sha512/.md5/.txt/.sum/.sums, `#` comment lines supported); the algorithm is cross-validated by file extension and hash length; switchable base directory; per-file verdicts grouped as passed / failed / missing / unreadable, with one-click export of problem rows.
 - **Export**: CSV (UTF-8 BOM, opens cleanly in Excel) and standard SUM format. Exported SUM files can be re-imported by Batch Verify (round-trip covered by integration tests). CRC32 is excluded from SUM export because it cannot be re-imported.
