@@ -25,6 +25,7 @@ import {
   detectAlgoByHash,
   dispatchDrop,
   dropPayload,
+  encodeRowContext,
   errorText,
   isManifestPath,
   taskSeq,
@@ -183,5 +184,43 @@ describe('任务会话扫描态', () => {
     expect(ok).toBe(true)
     expect(session.progress.value?.scanning).toBe(true)
     session.destroy()
+  })
+})
+
+describe('encodeRowContext（右键菜单行数据编码）', () => {
+  it('编码后可解码还原 path 与 hashes（与 Go 侧 decodeRowContext 对应）', () => {
+    const row = {
+      path: 'C:\\a b\\f 中文.txt',
+      name: 'f 中文.txt',
+      size: 1,
+      hashes: { md5: 'abc', sha256: 'def' },
+      durationMs: 1,
+      status: 'ok' as const,
+    }
+    const enc = encodeRowContext(row)
+    // encodeURIComponent 语义：空格为 %20（而非 +），中文为 UTF-8 百分号编码
+    expect(enc).toContain('%20')
+    expect(enc).not.toContain('+')
+    const decoded = JSON.parse(decodeURIComponent(enc)) as {
+      path: string
+      hashes: Record<string, string>
+    }
+    expect(decoded.path).toBe(row.path)
+    expect(decoded.hashes).toEqual(row.hashes)
+  })
+
+  it('hashes 缺失时编码为空对象而不是 undefined', () => {
+    const row = {
+      path: 'x',
+      name: 'x',
+      size: 0,
+      hashes: undefined as unknown as Record<string, string>,
+      durationMs: 0,
+      status: 'not_found' as const,
+    }
+    const decoded = JSON.parse(decodeURIComponent(encodeRowContext(row))) as {
+      hashes: Record<string, string>
+    }
+    expect(decoded.hashes).toEqual({})
   })
 })

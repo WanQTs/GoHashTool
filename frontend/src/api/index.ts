@@ -169,6 +169,15 @@ export const exportSUM = (taskId: string, path: string, algo: string) =>
   call(App.ExportSUM(taskId, path, algo))
 export const copyText = (text: string) => call(App.CopyText(text))
 export const cancelTask = (taskId: string) => call(App.CancelTask(taskId))
+export const setAlwaysOnTop = (on: boolean) => call(App.SetAlwaysOnTop(on))
+// 文件关联启动带入的清单路径：挂载后拉取一次（拉取模型规避前端就绪前事件丢失）
+export const consumePendingOpenFile = () => call(App.ConsumePendingOpenFile())
+// 结果行原生右键菜单：启动与切换语言时（重）建；文案按当前语言即时取值
+export const setupResultContextMenu = (labels: {
+  copyHash: string
+  copyPath: string
+  reveal: string
+}) => call(App.SetupResultContextMenu(labels))
 
 // ---------- 任务会话 ----------
 
@@ -333,6 +342,30 @@ export function createTaskSession() {
 }
 
 export type TaskSession = ReturnType<typeof createTaskSession>
+
+// ---------- 结果行右键菜单 ----------
+
+/**
+ * 结果行的原生右键菜单数据编码：encodeURIComponent(JSON)——
+ * 与 Go 侧 decodeRowContext（url.PathUnescape + json.Unmarshal）一一对应。
+ * 写在表格行的 --custom-contextmenu-data CSS 变量上，由 Wails runtime 原样传给 Go。
+ */
+export function encodeRowContext(row: Item): string {
+  return encodeURIComponent(JSON.stringify({ path: row.path, hashes: row.hashes ?? {} }))
+}
+
+/**
+ * 订阅右键菜单动作反馈（复制成功 / 动作失败 toast），返回取消函数。
+ * 菜单动作在 Go 侧闭环，反馈只能经事件回来（原生菜单没有返回值通道）。
+ */
+export function onContextFeedback(onCopied: () => void, onError: (err: AppError) => void) {
+  const offCopied = Events.On('context:copied', () => onCopied())
+  const offError = Events.On('context:error', (ev) => onError(ev.data as AppError))
+  return () => {
+    offCopied()
+    offError()
+  }
+}
 
 // ---------- 整窗拖拽路由 ----------
 

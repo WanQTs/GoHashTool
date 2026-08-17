@@ -12,13 +12,20 @@
     "switchLang": "Switch to English",
     "themeLight": "亮色",
     "themeDark": "暗色",
-    "themeSystem": "跟随系统"
+    "themeSystem": "跟随系统",
+    "pin": "窗口置顶",
+    "unpin": "取消置顶"
   },
   "dialog": {
     "pickFiles": "选择文件",
     "pickFolder": "选择文件夹",
     "pickManifest": "选择清单文件",
     "export": "导出"
+  },
+  "ctx": {
+    "copyHash": "复制哈希值",
+    "copyPath": "复制路径",
+    "reveal": "在资源管理器中显示"
   },
   "common": {
     "start": "开始",

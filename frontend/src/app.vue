@@ -2,7 +2,7 @@
 // 布局壳：侧边栏导航 + 顶栏（语言/主题切换）+ 工作区 router-view。
 // 整窗拖拽：index.html 的 <body data-file-drop-target> 为落点；
 // Go 侧接收系统拖拽事件并广播 'files-dropped'（载荷为绝对路径数组）。
-import { computed, onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
   darkTheme,
   dateEnUS,
@@ -21,12 +21,13 @@ import {
   FingerPrintOutline,
   GitCompareOutline,
   MoonOutline,
+  PinOutline,
   ShieldCheckmarkOutline,
   SunnyOutline,
 } from '@vicons/ionicons5'
 import { useI18n } from 'vue-i18n'
 import { Events } from '@wailsio/runtime'
-import { dispatchDrop } from './api'
+import { consumePendingOpenFile, dispatchDrop, setAlwaysOnTop, setupResultContextMenu } from './api'
 import { router } from './router'
 import { useSettingsStore } from './stores/settings'
 
@@ -71,18 +72,52 @@ const themeLabel = computed(() => {
 
 const langLabel = computed(() => (settings.locale === 'zh-CN' ? 'EN' : '中'))
 
-// 整窗拖拽：恰一个清单文件 → 批量校验（自动开始）；否则 → 哈希计算。
-let offDrop: (() => void) | null = null
+// 拖拽与「打开方式」（文件关联/单实例转交）共用路由：
+// 恰一个清单文件 → 批量校验（自动开始）；否则 → 哈希计算。
+function routePaths(paths: string[]) {
+  if (!paths || paths.length === 0) return
+  const target = dispatchDrop(paths)
+  if (router.currentRoute.value.path !== target) void router.push(target)
+}
 
-onMounted(() => {
-  offDrop = Events.On('files-dropped', (ev) => {
-    const paths = ev.data as string[]
-    if (!paths || paths.length === 0) return
-    const target = dispatchDrop(paths)
-    if (router.currentRoute.value.path !== target) void router.push(target)
+let offDrop: (() => void) | null = null
+let offOpen: (() => void) | null = null
+
+onMounted(async () => {
+  offDrop = Events.On('files-dropped', (ev) => routePaths(ev.data as string[]))
+  // 运行中双击清单文件：单实例把二实例参数转交为首实例的 open-with-file 事件
+  offOpen = Events.On('open-with-file', (ev) => {
+    const p = ev.data as string
+    if (p) routePaths([p])
   })
+  // 文件关联冷启动带入的清单：前端就绪前事件可能已发出，挂载后拉取兜底
+  const r = await consumePendingOpenFile()
+  if (r.ok && r.path) routePaths([r.path])
 })
-onBeforeUnmount(() => offDrop?.())
+onBeforeUnmount(() => {
+  offDrop?.()
+  offOpen?.()
+})
+
+// 窗口置顶（图钉）：会话级开关，不持久化
+const pinned = ref(false)
+async function togglePin() {
+  const next = !pinned.value
+  const r = await setAlwaysOnTop(next)
+  if (r.ok) pinned.value = next
+}
+
+// 结果行原生右键菜单：启动时注册一次；切换语言后按新文案重建
+// （原生菜单文案由 Go 侧持有，无法随语言包热更新，只能重建）
+function syncContextMenu() {
+  void setupResultContextMenu({
+    copyHash: t('ctx.copyHash'),
+    copyPath: t('ctx.copyPath'),
+    reveal: t('ctx.reveal'),
+  })
+}
+onMounted(syncContextMenu)
+watch(() => settings.locale, syncContextMenu)
 </script>
 
 <template>
@@ -112,6 +147,14 @@ onBeforeUnmount(() => offDrop?.())
           <header class="topbar">
             <div class="topbar-title">{{ t('app.title') }}</div>
             <div class="topbar-actions">
+              <n-tooltip trigger="hover">
+                <template #trigger>
+                  <button class="icon-btn" :class="{ 'is-on': pinned }" @click="togglePin()">
+                    <n-icon :size="17"><component :is="PinOutline" /></n-icon>
+                  </button>
+                </template>
+                {{ pinned ? t('topbar.unpin') : t('topbar.pin') }}
+              </n-tooltip>
               <n-tooltip trigger="hover">
                 <template #trigger>
                   <button class="icon-btn" @click="settings.toggleLocale()">{{ langLabel }}</button>

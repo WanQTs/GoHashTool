@@ -214,6 +214,13 @@ body {
   background-color: rgba(128, 128, 128, 0.10);
 }
 
+.icon-btn.is-on,
+.icon-btn.is-on:hover {
+  color: #2f7bff;
+  border-color: #2f7bff;
+  background-color: rgba(47, 123, 255, 0.1);
+}
+
 .workspace {
   flex: 1;
   min-height: 0;

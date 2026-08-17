@@ -237,3 +237,111 @@ func TestWriteExportConcurrent(t *testing.T) {
 		}
 	}
 }
+
+func TestIsOpenWithManifest(t *testing.T) {
+	yes := []string{"a.sha256", "B.MD5", "x/y/z.sum", "note.txt", "f.sHa1"}
+	for _, p := range yes {
+		if !isOpenWithManifest(p) {
+			t.Errorf("%s should be recognised as manifest", p)
+		}
+	}
+	no := []string{"a.csv", "b.exe", "sha256", "c.sha256.bak", ""}
+	for _, p := range no {
+		if isOpenWithManifest(p) {
+			t.Errorf("%s should not be recognised as manifest", p)
+		}
+	}
+	// .txt 仅识别不注册（避免劫持通用文本文件关联）
+	for _, ext := range assocExts {
+		if ext == ".txt" {
+			t.Fatal(".txt must not be registered as a file association")
+		}
+	}
+}
+
+func TestManifestArgFromArgs(t *testing.T) {
+	dir := t.TempDir()
+	manifest := filepath.Join(dir, "release.sha256")
+	if err := os.WriteFile(manifest, []byte("deadbeef  app.exe\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	plain := filepath.Join(dir, "data.csv")
+	if err := os.WriteFile(plain, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// args[0] 是可执行文件自身路径，不参与挑选
+	if got := manifestArgFromArgs([]string{"gohash.exe", manifest}); got != manifest {
+		t.Errorf("got %q, want %q", got, manifest)
+	}
+	// 第一个实际存在的清单胜出；非清单与不存在路径跳过
+	missing := filepath.Join(dir, "gone.md5")
+	if got := manifestArgFromArgs([]string{"gohash.exe", plain, missing, manifest}); got != manifest {
+		t.Errorf("got %q, want %q", got, manifest)
+	}
+	if got := manifestArgFromArgs([]string{"gohash.exe"}); got != "" {
+		t.Errorf("no args: got %q, want empty", got)
+	}
+	if got := manifestArgFromArgs([]string{"gohash.exe", plain, missing}); got != "" {
+		t.Errorf("no manifest: got %q, want empty", got)
+	}
+}
+
+func TestConsumePendingOpenFile(t *testing.T) {
+	a := NewApp()
+	if r := a.ConsumePendingOpenFile(); !r.OK || r.Path != "" {
+		t.Errorf("empty pending: got %+v", r)
+	}
+	a.openMu.Lock()
+	a.pendingOpen = `C:\sums\release.sha256`
+	a.openMu.Unlock()
+	r := a.ConsumePendingOpenFile()
+	if !r.OK || r.Path != `C:\sums\release.sha256` {
+		t.Errorf("got %+v", r)
+	}
+	// 拉取后清空，再拉为空
+	if r := a.ConsumePendingOpenFile(); r.Path != "" {
+		t.Errorf("should be cleared after consume, got %q", r.Path)
+	}
+}
+
+func TestSetAlwaysOnTopWithoutApp(t *testing.T) {
+	// 无 Wails 应用实例（单测环境）时结构化报错，不得 panic
+	a := NewApp()
+	if r := a.SetAlwaysOnTop(true); r.OK || r.Error == nil || r.Error.Code != "no_window" {
+		t.Errorf("got %+v, want no_window error", r)
+	}
+}
+
+func TestDecodeRowContext(t *testing.T) {
+	// 与前端 encodeURIComponent(JSON.stringify(...)) 等价的手工编码样例：
+	// JSON 文本 {"path":"C:\\a b\\f.txt","hashes":{"md5":"abc"}}
+	enc := `%7B%22path%22%3A%22C%3A%5C%5Ca%20b%5C%5Cf.txt%22%2C%22hashes%22%3A%7B%22md5%22%3A%22abc%22%7D%7D`
+	p, err := decodeRowContext(enc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Path != `C:\a b\f.txt` {
+		t.Errorf("path = %q", p.Path)
+	}
+	if p.Hashes["md5"] != "abc" {
+		t.Errorf("md5 = %q", p.Hashes["md5"])
+	}
+
+	// 中文路径（UTF-8 百分号编码）
+	encZh := `%7B%22path%22%3A%22%E4%B8%AD%E6%96%87.txt%22%2C%22hashes%22%3A%7B%7D%7D`
+	pz, err := decodeRowContext(encZh)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pz.Path != "中文.txt" {
+		t.Errorf("zh path = %q", pz.Path)
+	}
+
+	// 非法百分号转义与非法 JSON 都必须报错（不得静默吞错）
+	if _, err := decodeRowContext("%zz"); err == nil {
+		t.Error("bad escape should fail")
+	}
+	if _, err := decodeRowContext("%7Bbad"); err == nil {
+		t.Error("bad JSON should fail")
+	}
+}

@@ -110,6 +110,10 @@ type App struct {
 	mu    sync.Mutex
 	tasks map[string]*taskState
 	seq   atomic.Int64
+	// openMu 守护 pendingOpen（文件关联启动时暂存的清单路径，
+	// 见 openwith.go）；与任务锁分离，路径暂存与任务表互不干涉。
+	openMu      sync.Mutex
+	pendingOpen string
 }
 
 // NewApp creates a new App application struct
@@ -207,6 +211,24 @@ func (a *App) CopyText(text string) Result {
 	if !a.app.Clipboard.SetText(text) {
 		return errResult("clipboard", "复制失败", "Copy failed", nil)
 	}
+	return Result{OK: true}
+}
+
+// mainWindow 取主窗口句柄（单窗口应用，窗口名固定为 main）。
+func (a *App) mainWindow() (application.Window, bool) {
+	if a.app == nil {
+		return nil, false
+	}
+	return a.app.Window.GetByName("main")
+}
+
+// SetAlwaysOnTop 切换主窗口置顶（前端顶栏图钉按钮）。
+func (a *App) SetAlwaysOnTop(on bool) Result {
+	w, ok := a.mainWindow()
+	if !ok {
+		return errResult("no_window", "窗口不可用", "Window unavailable", nil)
+	}
+	w.SetAlwaysOnTop(on)
 	return Result{OK: true}
 }
 
@@ -577,6 +599,11 @@ func (a *App) runTask(ctx context.Context, taskID string, st *taskState,
 			sum.Error = &AppError{Code: "no_files", Zh: "没有可计算的文件", En: "No files to hash"}
 		}
 		a.app.Event.Emit("hash:done", sum)
+		// 任务结束时窗口不在前台 → 任务栏闪烁提醒（Windows 为 FLASHW_TIMERNOFG，
+		// 窗口回到前台自动停止闪烁，无需配对调用 Flash(false)）。
+		if w, ok := a.mainWindow(); ok && !w.IsFocused() {
+			w.Flash(true)
+		}
 	}()
 
 	// 阶段一：目录展开（在任务 goroutine 内进行，取消 1 个遍历步内生效）。

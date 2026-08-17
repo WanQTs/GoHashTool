@@ -31,6 +31,7 @@ A Windows 64-bit desktop tool to compute, verify and compare file hashes. Built 
 - **Compare**: pick two files and compare them side by side across the selected algorithms.
 - **Batch Verify**: import standard md5sum/sha256sum manifests (.sha256/.sha1/.sha512/.md5/.txt/.sum/.sums, `#` comment lines supported); the algorithm is cross-validated by file extension and hash length; switchable base directory; per-file verdicts grouped as passed / failed / missing / unreadable, with one-click export of problem rows.
 - **Export**: CSV (UTF-8 BOM, opens cleanly in Excel) and standard SUM format. Exported SUM files can be re-imported by Batch Verify (round-trip covered by integration tests). CRC32 is excluded from SUM export because it cannot be re-imported.
+- **System integration**: single instance (relaunching focuses the running window and forwards the file); checksum manifest file associations (.sha256/.md5 etc. — double-click a manifest to open Batch Verify directly; per-user HKCU registration, never hijacks extensions owned by other apps); taskbar flash when a task finishes while the window is in the background; always-on-top toggle; native row context menu (copy hash / copy path / show in Explorer).
 - **UI**: Mica window material (Windows 11, automatic fallback on older systems), light/dark theme (follows system by default), instant Chinese/English switching (follows system language), 150–250ms transitions, empty-state guidance.
 
 ## 📸 Screenshots

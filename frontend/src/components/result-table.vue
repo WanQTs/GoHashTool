@@ -3,10 +3,18 @@
 // 十万级行数依赖 n-data-table 的 virtual-scroll；哈希单元格点击复制。
 // 工具栏支持按路径关键字筛选与「仅看问题行」，大结果集下快速定位失败项。
 // 高度自适应：ResizeObserver 实测表体容器高度喂给 max-height（virtual-scroll 需具体像素值）。
-import { computed, h, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, h, onBeforeUnmount, onMounted, ref, type CSSProperties } from 'vue'
 import { NCheckbox, NDataTable, NInput, NTag, useMessage, type DataTableColumns } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
-import { algoLabel, copyText, errorText, type Item } from '../api'
+import {
+  algoLabel,
+  copyText,
+  encodeRowContext,
+  errorText,
+  onContextFeedback,
+  type AppError,
+  type Item,
+} from '../api'
 import { baseName, formatBytes, formatDuration } from '../utils/format'
 import { useSettingsStore } from '../stores/settings'
 
@@ -28,7 +36,14 @@ const wrapRef = ref<HTMLElement | null>(null)
 const tableMaxHeight = ref(props.maxHeight)
 let resizeObserver: ResizeObserver | null = null
 
+// 右键菜单动作反馈（复制成功/失败 toast）；菜单动作在 Go 侧闭环，反馈经事件回来
+let offFeedback: (() => void) | null = null
+
 onMounted(() => {
+  offFeedback = onContextFeedback(
+    () => message.success(t('common.copied')),
+    (err: AppError) => message.error(errorText(err, settings.locale)),
+  )
   if (!wrapRef.value || typeof ResizeObserver === 'undefined') return
   resizeObserver = new ResizeObserver(() => {
     const h = wrapRef.value?.clientHeight ?? 0
@@ -37,7 +52,10 @@ onMounted(() => {
   resizeObserver.observe(wrapRef.value)
 })
 
-onBeforeUnmount(() => resizeObserver?.disconnect())
+onBeforeUnmount(() => {
+  offFeedback?.()
+  resizeObserver?.disconnect()
+})
 
 // ---------- 行筛选（路径关键字 + 仅看问题行） ----------
 
@@ -196,6 +214,17 @@ function rowClassName(row: Item): string {
   return row.status === 'ok' ? '' : 'row-error'
 }
 
+// 行级原生右键菜单：在 tr 上声明 CSS 变量（自定义属性随继承传递，
+// runtime 在右键事件目标上经 getComputedStyle 读到的就是所在行的菜单名与行数据）。
+function rowProps(row: Item) {
+  return {
+    style: {
+      '--custom-contextmenu': 'result-row',
+      '--custom-contextmenu-data': encodeRowContext(row),
+    } as CSSProperties,
+  }
+}
+
 const rowKey = (row: Item) => row.path
 </script>
 
@@ -222,6 +251,7 @@ const rowKey = (row: Item) => row.path
         :data="filteredItems"
         :row-key="rowKey"
         :row-class-name="rowClassName"
+        :row-props="rowProps"
         virtual-scroll
         :min-row-height="38"
         :max-height="tableMaxHeight"

@@ -24,6 +24,15 @@ export function CancelTask(taskID: string): $CancellablePromise<$models.Result> 
 }
 
 /**
+ * ConsumePendingOpenFile 前端挂载后拉取并清空暂存的清单路径（无暂存时 Path 为空）。
+ */
+export function ConsumePendingOpenFile(): $CancellablePromise<$models.Result> {
+    return $Call.ByID(35671518).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
  * CopyText 复制文本到剪贴板。
  */
 export function CopyText(text: string): $CancellablePromise<$models.Result> {
@@ -83,6 +92,24 @@ export function PickManifestFile(title: string): $CancellablePromise<$models.Res
  */
 export function PickSavePath(defaultName: string, filterName: string, pattern: string, title: string): $CancellablePromise<$models.Result> {
     return $Call.ByID(2127023646, defaultName, filterName, pattern, title).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * SetAlwaysOnTop 切换主窗口置顶（前端顶栏图钉按钮）。
+ */
+export function SetAlwaysOnTop(on: boolean): $CancellablePromise<$models.Result> {
+    return $Call.ByID(3581063306, on).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * SetupResultContextMenu （重）建结果行右键菜单：应用启动与每次切换语言时由前端调用。
+ */
+export function SetupResultContextMenu(labels: $models.ContextMenuLabels): $CancellablePromise<$models.Result> {
+    return $Call.ByID(3415215169, labels).then(($result: any) => {
         return $$createType0($result);
     });
 }

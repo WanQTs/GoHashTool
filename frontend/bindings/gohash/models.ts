@@ -39,6 +39,38 @@ export class AppError {
 }
 
 /**
+ * ContextMenuLabels 菜单文案（前端按当前语言即时取值传入，切换语言后重建菜单）。
+ */
+export class ContextMenuLabels {
+    "copyHash": string;
+    "copyPath": string;
+    "reveal": string;
+
+    /** Creates a new ContextMenuLabels instance. */
+    constructor($$source: Partial<ContextMenuLabels> = {}) {
+        if (!("copyHash" in $$source)) {
+            this["copyHash"] = "";
+        }
+        if (!("copyPath" in $$source)) {
+            this["copyPath"] = "";
+        }
+        if (!("reveal" in $$source)) {
+            this["reveal"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ContextMenuLabels instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ContextMenuLabels {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ContextMenuLabels($$parsedSource as Partial<ContextMenuLabels>);
+    }
+}
+
+/**
  * Result 绑定方法统一返回结构（对话框选择、任务启动、导出等）。
  */
 export class Result {

@@ -12,13 +12,20 @@
     "switchLang": "切换到中文",
     "themeLight": "Light",
     "themeDark": "Dark",
-    "themeSystem": "System"
+    "themeSystem": "System",
+    "pin": "Always on top",
+    "unpin": "Unpin window"
   },
   "dialog": {
     "pickFiles": "Select Files",
     "pickFolder": "Select Folder",
     "pickManifest": "Select Manifest",
     "export": "Export"
+  },
+  "ctx": {
+    "copyHash": "Copy Hash",
+    "copyPath": "Copy Path",
+    "reveal": "Show in Explorer"
   },
   "common": {
     "start": "Start",
