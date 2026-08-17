@@ -60,10 +60,11 @@ func main() {
 		}
 	})
 
-	// 注册清单文件关联到当前用户（HKCU 免管理员；已被占用的扩展名跳过不劫持），
-	// 失败仅记日志，不影响启动。
+	// 文件关联自愈：仅当扩展名明确关联到本应用（用户经设置开关显式注册过）
+	// 且 exe 路径已变化时，把打开命令更新为当前路径；未注册的机器零写入。
+	// 关联的注册/解除由设置里的显式开关触发（方案 B：默认关，不自动注册）。
 	if exe, err := os.Executable(); err == nil {
-		registerFileAssociations(exe, app.Logger)
+		healFileAssoc(exe, app.Logger)
 	} else {
 		app.Logger.Error("resolve executable path failed", "error", err)
 	}

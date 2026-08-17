@@ -14,7 +14,15 @@
     "themeDark": "暗色",
     "themeSystem": "跟随系统",
     "pin": "窗口置顶",
-    "unpin": "取消置顶"
+    "unpin": "取消置顶",
+    "settings": "设置"
+  },
+  "assoc": {
+    "title": "文件关联",
+    "enable": "注册清单文件关联",
+    "desc": "双击 .sha256 / .md5 等清单文件直接用本工具打开批量校验。仅写入当前用户注册表（免管理员），被其他程序占用的扩展名不劫持，可随时解除。",
+    "registered": "已注册清单文件关联",
+    "unregistered": "已解除清单文件关联"
   },
   "dialog": {
     "pickFiles": "选择文件",

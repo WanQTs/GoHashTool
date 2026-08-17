@@ -27,6 +27,8 @@ export interface Result {
   algo?: string
   /** 任务先异步扫描目录：总量/字节数随首个非扫描态进度事件下发（此时为 0） */
   scanning?: boolean
+  /** 通用计数（如文件关联的扩展名数量） */
+  count?: number
 }
 
 export type ItemStatus = 'ok' | 'occupied' | 'no_permission' | 'not_found' | 'error' | 'canceled'
@@ -178,6 +180,10 @@ export const setupResultContextMenu = (labels: {
   copyPath: string
   reveal: string
 }) => call(App.SetupResultContextMenu(labels))
+// 文件关联（设置开关）：查询/注册/解除；count 为涉及扩展名数量
+export const getFileAssocStatus = () => call(App.GetFileAssocStatus())
+export const registerFileAssociations = () => call(App.RegisterFileAssociations())
+export const unregisterFileAssociations = () => call(App.UnregisterFileAssociations())
 
 // ---------- 任务会话 ----------
 

@@ -36,6 +36,7 @@ type Result struct {
 	TotalBytes int64     `json:"totalBytes"`         // 总字节数
 	Algo       string    `json:"algo,omitempty"`     // 批量校验识别出的算法
 	Scanning   bool      `json:"scanning,omitempty"` // 任务先异步扫描目录，总量经后续进度事件下发
+	Count      int       `json:"count,omitempty"`    // 通用计数（如文件关联的扩展名数量）
 }
 
 // Item 结果行（哈希计算与批量校验共用；校验场景带 Expected/Actual/Verdict）。

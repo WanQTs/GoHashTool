@@ -345,3 +345,49 @@ func TestDecodeRowContext(t *testing.T) {
 		t.Error("bad JSON should fail")
 	}
 }
+
+func TestFileAssocPlan(t *testing.T) {
+	const progid = "GoHashTool.sha256"
+	want := assocCommandFor(`D:\Tools\gohash.exe`)
+	stale := assocCommandFor(`C:\Old\gohash.exe`)
+
+	// 注册判定：未关联 → 写；他人占用 → 跳过；我们的但路径陈旧 → 自愈写；已是期望 → 跳过
+	if !planAssocWrite("", progid, "", want) {
+		t.Error("unassociated ext should be written")
+	}
+	if planAssocWrite("OtherApp.sha256", progid, "", want) {
+		t.Error("ext owned by another app must not be hijacked")
+	}
+	if !planAssocWrite(progid, progid, stale, want) {
+		t.Error("stale command of our own ProgID should be healed")
+	}
+	if planAssocWrite(progid, progid, want, want) {
+		t.Error("already-current association should be skipped")
+	}
+
+	// 自愈判定：只动「明确是我们的且陈旧」；未关联（含用户手动解除后）一律不写
+	if !planAssocHeal(progid, progid, stale, want) {
+		t.Error("stale own association should be healed")
+	}
+	if planAssocHeal("", progid, "", want) {
+		t.Error("unassociated ext must not be auto-registered by heal")
+	}
+	if planAssocHeal("OtherApp.sha256", progid, stale, want) {
+		t.Error("foreign-owned ext must not be healed")
+	}
+
+	// 解除判定：只删自己的 ProgID
+	if !planAssocRemove(progid, progid) {
+		t.Error("our own association should be removable")
+	}
+	if planAssocRemove("OtherApp.sha256", progid) || planAssocRemove("", progid) {
+		t.Error("foreign or absent association must not be removed")
+	}
+
+	if got := progIDFor(".md5"); got != "GoHashTool.md5" {
+		t.Errorf("progIDFor = %q", got)
+	}
+	if got := assocCommandFor(`C:\a b\gohash.exe`); got != `"C:\a b\gohash.exe" "%1"` {
+		t.Errorf("assocCommandFor = %q", got)
+	}
+}

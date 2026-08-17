@@ -61,6 +61,15 @@ export function ExportSUM(taskID: string, path: string, algo: string): $Cancella
 }
 
 /**
+ * GetFileAssocStatus 当前关联到本应用的扩展名数量（前端开关的勾选依据）。
+ */
+export function GetFileAssocStatus(): $CancellablePromise<$models.Result> {
+    return $Call.ByID(922682546).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
  * PickFiles 多选文件对话框。
  */
 export function PickFiles(title: string): $CancellablePromise<$models.Result> {
@@ -92,6 +101,16 @@ export function PickManifestFile(title: string): $CancellablePromise<$models.Res
  */
 export function PickSavePath(defaultName: string, filterName: string, pattern: string, title: string): $CancellablePromise<$models.Result> {
     return $Call.ByID(2127023646, defaultName, filterName, pattern, title).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * RegisterFileAssociations 显式注册全部清单扩展名关联（被其他程序占用的跳过），
+ * Count 为实际写入数量。
+ */
+export function RegisterFileAssociations(): $CancellablePromise<$models.Result> {
+    return $Call.ByID(349570046).then(($result: any) => {
         return $$createType0($result);
     });
 }
@@ -133,6 +152,16 @@ export function StartHashTask(paths: string[], algos: string[]): $CancellablePro
  */
 export function StartVerifyTask(manifestPath: string, baseDir: string): $CancellablePromise<$models.Result> {
     return $Call.ByID(2904902583, manifestPath, baseDir).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * UnregisterFileAssociations 解除关联：只删除本应用自有 ProgID 条目，
+ * Count 为实际删除的扩展名数量。
+ */
+export function UnregisterFileAssociations(): $CancellablePromise<$models.Result> {
+    return $Call.ByID(724829789).then(($result: any) => {
         return $$createType0($result);
     });
 }

@@ -30,6 +30,7 @@ import { Events } from '@wailsio/runtime'
 import { consumePendingOpenFile, dispatchDrop, setAlwaysOnTop, setupResultContextMenu } from './api'
 import { router } from './router'
 import { useSettingsStore } from './stores/settings'
+import SettingsMenu from './components/settings-menu.vue'
 
 const settings = useSettingsStore()
 const { t } = useI18n()
@@ -169,6 +170,7 @@ watch(() => settings.locale, syncContextMenu)
                 </template>
                 {{ themeLabel }}
               </n-tooltip>
+              <settings-menu />
             </div>
           </header>
 

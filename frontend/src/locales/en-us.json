@@ -14,7 +14,15 @@
     "themeDark": "Dark",
     "themeSystem": "System",
     "pin": "Always on top",
-    "unpin": "Unpin window"
+    "unpin": "Unpin window",
+    "settings": "Settings"
+  },
+  "assoc": {
+    "title": "File Association",
+    "enable": "Register manifest file association",
+    "desc": "Double-click .sha256 / .md5 and other checksum manifests to open them directly in Batch Verify. Writes to the per-user registry only (no admin needed); extensions owned by other apps are left alone; reversible anytime.",
+    "registered": "Manifest file association registered",
+    "unregistered": "Manifest file association removed"
   },
   "dialog": {
     "pickFiles": "Select Files",

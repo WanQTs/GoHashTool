@@ -112,6 +112,11 @@ export class Result {
      */
     "scanning"?: boolean;
 
+    /**
+     * 通用计数（如文件关联的扩展名数量）
+     */
+    "count"?: number;
+
     /** Creates a new Result instance. */
     constructor($$source: Partial<Result> = {}) {
         if (!("ok" in $$source)) {

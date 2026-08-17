@@ -60,3 +60,40 @@ func (a *App) ConsumePendingOpenFile() Result {
 	a.openMu.Unlock()
 	return Result{OK: true, Path: p}
 }
+
+// ---------- 文件关联（设置里的显式开关；仅 Windows，HKCU 免管理员） ----------
+
+// assocUnsupported 非 Windows 平台的结构化错误。
+func assocUnsupported() Result {
+	return errResult("unsupported_platform", "当前平台不支持文件关联注册", "File association is not supported on this platform", nil)
+}
+
+// GetFileAssocStatus 当前关联到本应用的扩展名数量（前端开关的勾选依据）。
+func (a *App) GetFileAssocStatus() Result {
+	if !fileAssocSupported() {
+		return assocUnsupported()
+	}
+	return Result{OK: true, Count: fileAssocCount()}
+}
+
+// RegisterFileAssociations 显式注册全部清单扩展名关联（被其他程序占用的跳过），
+// Count 为实际写入数量。
+func (a *App) RegisterFileAssociations() Result {
+	if !fileAssocSupported() {
+		return assocUnsupported()
+	}
+	exe, err := os.Executable()
+	if err != nil {
+		return errResult("assoc", "解析程序路径失败", "Failed to resolve executable path", err)
+	}
+	return Result{OK: true, Count: registerFileAssoc(exe, a.app.Logger)}
+}
+
+// UnregisterFileAssociations 解除关联：只删除本应用自有 ProgID 条目，
+// Count 为实际删除的扩展名数量。
+func (a *App) UnregisterFileAssociations() Result {
+	if !fileAssocSupported() {
+		return assocUnsupported()
+	}
+	return Result{OK: true, Count: unregisterFileAssoc(a.app.Logger)}
+}

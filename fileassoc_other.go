@@ -4,5 +4,15 @@ package main
 
 import "log/slog"
 
-// registerFileAssociations 仅 Windows 有资源管理器扩展名关联注册；其他平台空实现。
-func registerFileAssociations(string, *slog.Logger) {}
+// 文件关联注册表读写仅 Windows 平台有；其他平台均为空实现（不支持），
+// 绑定方法经 fileAssocSupported 判断后返回结构化错误。
+
+func fileAssocSupported() bool { return false }
+
+func fileAssocCount() int { return 0 }
+
+func registerFileAssoc(string, *slog.Logger) int { return 0 }
+
+func unregisterFileAssoc(*slog.Logger) int { return 0 }
+
+func healFileAssoc(string, *slog.Logger) {}
