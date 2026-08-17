@@ -25,7 +25,7 @@
 - `frontend/package.json`：依赖 Vue 3.5、Naive UI、vue-i18n、vue-router（hash 模式）、pinia、@vicons/ionicons5、**@wailsio/runtime（与 Go 端同版本 beta.9）**；`npm run build` = `vue-tsc --noEmit && vite build`；`npm run build:dev` 供 wails3 dev 使用；`npm run test` = `vitest run`。无独立 lint 配置。
 - `frontend/tsconfig.json`：`strict: true`，`resolveJsonModule: true`（locales 的 JSON 直接 import，api 层也借此取双语文案）。
 - `frontend/vite.config.ts`：仅 `@vitejs/plugin-vue`，无额外配置。
-- `build/`：Wails v3 构建资产（`appicon.png`、`config.yml`、`Taskfile.yml`、`windows/` 下的图标/清单/`info.json`/Taskfile）。`darwin/` 是脚手架默认目录，本项目目标平台只有 Windows 64 位。
+- `build/`：Wails v3 构建资产（`appicon.png`、`config.yml`、`Taskfile.yml`、`windows/` 下的图标/清单/`info.json`/Taskfile）。`darwin/`、`linux/`、`ios/` 是脚手架默认目录（再生成资产时自动带出），本项目目标平台只有 Windows 64 位。
 - `frontend/bindings/`：**`wails3 generate bindings -ts` 自动生成的绑定代码**（`gohash/app.ts` 按方法 ID 调用 + `models.ts`），重新生成于构建流程或由命令手动触发，**不要手改**。v2 时代的 `frontend/wailsjs/` 已删除。
 - 输出目录为项目根 `bin/`（v3 默认），不是 v2 的 `build/bin/`。
 

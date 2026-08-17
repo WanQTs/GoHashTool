@@ -11,7 +11,7 @@ info:
   description: "文件哈希值获取与对比工具 / File hash compute & compare tool"
   copyright: "(c) 2026 gohash"
   comments: "Wails v3 + Go + Vue 3"
-  version: "1.1.0"
+  version: "1.2.0"
 
 # 开发模式（wails3 dev）配置
 dev_mode:

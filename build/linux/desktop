@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=文件哈希工具 File Hash Tool
+Comment=文件哈希值获取与对比工具 / File hash compute & compare tool
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/gohash %u
+Terminal=false
+Type=Application
+Icon=gohash
+Categories=Utility;
+StartupWMClass=gohash
+
+ 
