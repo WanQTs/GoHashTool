@@ -14,7 +14,7 @@
     !define INFO_PRODUCTNAME "文件哈希工具 File Hash Tool"
 !endif
 !ifndef INFO_PRODUCTVERSION
-    !define INFO_PRODUCTVERSION "1.2.0"
+    !define INFO_PRODUCTVERSION "1.2.1"
 !endif
 !ifndef INFO_COPYRIGHT
     !define INFO_COPYRIGHT "(c) 2026 gohash"
