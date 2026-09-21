@@ -56,6 +56,24 @@ Requires 64-bit Windows 10/11 and the WebView2 Runtime (preinstalled on Windows 
 4. **Batch Verify**: select a manifest (or drop one into the window — the app jumps to the page and starts automatically). Relative paths resolve against the manifest directory by default; a custom base directory can be set.
 5. **Export**: once results are in, use "Export CSV" / "Export SUM"; the Batch page can export only the problem rows.
 
+## 💻 Command Line (CLI)
+
+The same exe doubles as a command-line tool with `md5sum`/`sha256sum`-style syntax: passing arguments in a terminal enters CLI mode (no arguments — or a single manifest file argument — still opens the GUI).
+
+```bash
+gohash setup.iso                  # hash files (SHA-256 by default)
+gohash -a md5 -a sha256 big.iso   # multiple algorithms in one scan
+gohash -a sha1,md5 src\ *.dll     # comma-separated + directory recursion + wildcards
+gohash -c list.sha256             # verify against a manifest (md5sum -c compatible)
+gohash -c --status list.md5       # silent check, exit code only
+gohash --help                     # full usage
+```
+
+- Options: `-a/--algorithm` (md5/sha1/sha256/sha512/crc32, repeatable or comma-separated), `-c/--check`, `-q/--quiet` (hide OK lines), `--status` (exit code only).
+- Single-algorithm output is strict md5sum format `<hash>  <path>` — the product of `gohash -a sha256 dir > list.sha256` can be re-verified by both `gohash -c` and GNU sha256sum.
+- Check mode prints `<file>: OK / FAILED` per line; relative paths in the manifest resolve against the **current directory** (GNU semantics).
+- Exit codes: `0` all succeeded, `1` any file failed/mismatched, `2` usage or manifest error — ready for scripts: `gohash -c --status list.md5 || echo FAILED`.
+
 ## ⚡ Performance
 
 Test hardware:

@@ -56,6 +56,24 @@ Windows 64 位桌面工具，用于文件哈希值的获取与对比。技术栈
 4. **批量校验**：选择清单文件（或直接把清单文件拖进窗口，会自动跳转并开始校验）；默认以清单所在目录为基准解析相对路径，也可手动指定其他基准目录。
 5. **导出**：结果出来后点击「导出 CSV」或「导出 SUM」；批量校验页可单独导出问题项。
 
+## 💻 命令行（CLI）
+
+同一个 exe 也是命令行工具，语法对标 `md5sum`/`sha256sum`：在终端中带参数调用即进入 CLI 模式（无参数、或仅一个清单文件参数时仍打开图形界面）。
+
+```bash
+gohash setup.iso                  # 计算哈希（默认 SHA-256）
+gohash -a md5 -a sha256 big.iso   # 多算法一次扫描
+gohash -a sha1,md5 src\ *.dll     # 逗号分隔 + 目录递归 + 通配符
+gohash -c list.sha256             # 按清单校验（md5sum -c 兼容）
+gohash -c --status list.md5       # 静默校验，只看退出码
+gohash --help                     # 完整用法
+```
+
+- 选项：`-a/--algorithm`（md5/sha1/sha256/sha512/crc32，可重复或逗号分隔）、`-c/--check`、`-q/--quiet`（不打印 OK 行）、`--status`（只报退出码）。
+- 单算法输出为严格 md5sum 格式 `<hash>  <路径>`，`gohash -a sha256 dir > list.sha256` 的产物可被 `gohash -c` 与 GNU sha256sum 直接复用。
+- 校验模式逐行输出 `<文件>: OK / FAILED`；清单内相对路径相对**当前目录**解析（GNU 语义）。
+- 退出码：`0` 全部成功，`1` 有文件失败/不一致，`2` 用法或清单错误——可直接进脚本：`gohash -c --status list.md5 || echo FAILED`。
+
 ## ⚡ 性能实测
 
 测试硬件：

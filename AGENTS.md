@@ -15,6 +15,8 @@
 
 导出：CSV（带 UTF-8 BOM，Excel 直开不乱码）与标准 SUM 格式（仅 MD5/SHA-1/SHA-256/SHA-512；**CRC32 不提供 SUM 导出**——其 8 位摘要不在清单识别范围内，导出后无法重新导入校验，后端以 `algo_not_exportable` 拒绝）；导出的 SUM 可被批量校验重新导入（闭环，有集成测试保障）。UI 为 Mica 云母窗口材质（Win11，低版本系统自动回退模糊/实色）、浅色/深色主题（默认跟随系统）、中英双语即时切换（默认跟随系统语言，无法判断时回退中文）。
 
+同一 exe 另有 **CLI 命令行模式**（语法对标 md5sum/sha256sum，见 cli.go 与 README「命令行（CLI）」一节）：`gohash -a sha256 file`、`gohash -c list.md5`，退出码 0/1/2，供脚本与管道使用。
+
 系统集成（Wails v3 特性）：**单实例**（`SingleInstance`，重复启动聚焦已有窗口并把二实例参数转交前端）；**清单文件关联**（`FileAssociations` + `ApplicationOpenedWithFile`，双击 .sha256/.md5 等清单直接打开批量校验——关联注册为**设置里的显式开关，默认关**：注册/解除只写/删 HKCU\Software\Classes 下本应用自有 ProgID（免管理员），被其他程序占用的扩展名跳过不劫持，.txt 只识别不注册；启动时仅「自愈」已注册但 exe 路径已陈旧的条目，未注册机器零写入）；**任务完成提醒**（`hash:done` 时窗口不在前台则 `Flash(true)` 任务栏闪烁，TIMERNOFG 回前台自动停止）；**窗口置顶**（顶栏图钉 → `SetAlwaysOnTop`，会话级不持久化）；**结果行原生右键菜单**（前端在 tr 上声明 `--custom-contextmenu`/`--custom-contextmenu-data` CSS 变量，Go 侧注册 `result-row` 菜单：复制哈希/复制路径/在资源管理器中显示；动作反馈经 `context:copied`/`context:error` 事件回前端 toast）。
 
 ## 技术栈与关键配置
@@ -82,7 +84,8 @@ main.go                  Wails v3 入口：application.New + NewWithOptions（12
                          BackgroundTypeTranslucent + BackdropType Mica），//go:embed all:frontend/dist，
                          窗口级 EnableFileDrop + OnWindowEvent(WindowFilesDropped) 转发
                          "files-dropped" 事件给前端；OnShutdown 取消全部任务；
-                         检测到 --selftest 参数时不开 GUI 转自检；
+                         检测到 --selftest 参数时不开 GUI 转自检；tryCLI 在 application.New
+                         之前分流 CLI 命令行调用（见 cli.go），CLI 路径不触碰 Wails/单实例；
                          SingleInstance（二实例参数转交首实例并聚焦窗口）+ FileAssociations 声明 +
                          OnApplicationEvent(ApplicationOpenedWithFile) 转 notifyOpenWithFile +
                          healFileAssoc（仅自愈本应用自有但路径陈旧的关联条目，不自动注册）
@@ -113,6 +116,22 @@ selftest.go              --selftest 无界面核心自检（已知值/SUM 闭环
                          selftest_windows.go 用 AttachConsole 让 windowsgui 构建也能打印
                          （注意：部分管道/伪终端环境下控制台文本可能中途截断，属终端宿主的
                          控制台挂接时序问题；自检契约是退出码，冒烟脚本只依赖退出码）
+cli.go                   CLI 命令行模式（语法对标 GNU md5sum/sha256sum）：tryCLI 在
+                         application.New 之前分流（CLI 不触碰 Wails/单实例）——含任意
+                         CLI 选项走 CLI；无参数走 GUI；恰好一个已存在清单文件参数走 GUI
+                         （双击清单/「打开方式」现状不变）；其余走 CLI 哈希模式。
+                         parseCLIArgs 手写解析（长短选项、=值、混排、-- 终止；-c/--check
+                         是布尔开关，清单走位置参数，与 GNU 一致）；runCLIHash 单算法输出
+                         严格 md5sum 格式（复用 checksum.WriteSUM，可回导 -c），多算法
+                         每行带算法名前缀；runCLICheck 逐行 name: OK/FAILED（--quiet 抑制
+                         OK 行、--status 完全静默），清单相对路径相对当前目录解析（GNU 语义）。
+                         退出码契约：0 全部成功 / 1 有失败或不一致 / 2 用法或清单错误；
+                         结果行走 stdout、诊断走 stderr、文案固定英文（脚本可稳定匹配）
+console_windows.go       CLI 控制台输出：stdout 已是文件/管道（重定向、MinTTY）直接写
+                         UTF-8 字节；否则 AttachConsole 附加父控制台后走 WriteConsoleW
+                         （UTF-16，GBK 控制台中文路径不乱码，不改父控制台代码页）；
+                         都无控制台则静默丢弃（退出码仍有效）；console_other.go 为非
+                         Windows 直接返回 os.Stdout/Stderr
 Taskfile.yml             构建编排入口（wails3 build/dev/task）
 build/config.yml         项目元数据 + dev 模式配置
 internal/hashcore/       哈希核心：流式引擎、双缓冲流水线、worker pool（纯 Go，不依赖 Wails，可独立测试）
@@ -168,6 +187,7 @@ tools/smoke-test.ps1     冒烟测试脚本（selftest 退出码 / 启动耗时 
 
 - `go test ./...`：三个包均有测试；涉及并发回调路径改动时须再跑 `go test -race ./...`（需要 CGO/gcc）。
   - 根包 `app_test.go`：绑定层纯逻辑（parseAlgos、manifestError 双语映射、countSummary、exportableSUMCount、verdictFor 结论映射、newTask 取消句柄登记、CRC32 导出拒绝、writeExport 并发导出唯一临时名、任务淘汰、isOpenWithManifest/manifestArgFromArgs「打开方式」参数挑选（含 .txt 不注册断言）、decodeRowContext 右键菜单行数据解码（encodeURIComponent 等价样例）、ConsumePendingOpenFile 拉取即清空、SetAlwaysOnTop 无应用实例结构化报错、planAssocWrite/Heal/Remove 文件关联动作判定（不劫持/不自作主张注册/只删自有）），不启动 Wails。
+  - 根包 `cli_test.go`：CLI 纯逻辑（parseCLIArgs 长短选项/等号/混排/`--`/错误选项、routeCLI 分流规则、expandGlobs 通配符、哈希模式 md5sum 精确行格式与 GNU 转义回环、校验模式全过/篡改/缺失/quiet/status/坏清单的退出码与输出），输出注入 bytes.Buffer，不碰真实控制台。注意 `t.Chdir` 必须注册在子测试自身的 `t` 上，否则 Windows 下 TempDir 清理会因「目录是进程当前目录」失败。
   - `internal/hashcore/hashcore_test.go`：单元测试，含 "abc"/空文件已知值、70MB 大文件（刚过 64MB 流水线阈值）与标准库一致性、流水线与流式两条路径的取消、错误分类、ExpandPaths/ExpandPathsDetailed 去重、ExpandPathsDetailedContext 取消与扫描回调、walkErrAction 遍历错误策略、CanonicalKey 大小写折叠等；`bench_test.go` 为性能基准（夹具：1GB 大文件 + 1 万个 1KB 小文件，跨 benchmark 复用，`TestMain` 负责清理）。**onItem 回调在多 worker goroutine 并发触发，测试中收集结果必须加锁**（曾因未加锁被 race 检测抓到）。
   - `internal/checksum/checksum_test.go`：清单解析（含 `#` 注释行）、算法识别（扩展名×长度交叉校验、mixed_length）、转义往返、CSV 校验列、ResolveTargets 去重/缺失归类/Windows 大小写折叠的单元测试；`integration_test.go` 的 `TestSUMRoundTrip` 覆盖 计算 → 导出 SUM → 重新导入解析 → 识别算法 → 重新计算 → 全部通过 的闭环。
 - 新增纯逻辑优先放进 `internal/hashcore` / `internal/checksum`（不依赖 Wails，可直接单测）；`app.go` 只做绑定与编排，可拆出的纯函数（如 countSummary、exportableSUMCount、verdictFor）拆出以便测试。

@@ -20,6 +20,13 @@ func main() {
 		}
 	}
 
+	// CLI 模式（语法对标 md5sum/sha256sum，见 cli.go）：在 application.New 之前
+	// 分流，CLI 路径完全不触碰 Wails/单实例；无参数、或单个已存在清单文件参数
+	// （双击清单/「打开方式」）仍走 GUI。
+	if handled, code := tryCLI(os.Args[1:]); handled {
+		os.Exit(code)
+	}
+
 	hashService := NewApp()
 
 	// window 先声明后赋值：SingleInstance 回调在闭包中引用它，
