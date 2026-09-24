@@ -9,7 +9,7 @@
 [![Release](https://img.shields.io/github/v/release/WanQTs/GoHashTool)](https://github.com/WanQTs/GoHashTool/releases)
 [![CI](https://github.com/WanQTs/GoHashTool/actions/workflows/ci.yml/badge.svg)](https://github.com/WanQTs/GoHashTool/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/)
-[![Wails](https://img.shields.io/badge/Wails-v3.0.0--beta.9-E03C31)](https://v3.wails.io/)
+[![Wails](https://img.shields.io/badge/Wails-v3.0.0--beta.25-E03C31)](https://v3.wails.io/)
 [![Vue](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-0078D6)](https://github.com/WanQTs/GoHashTool)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -110,7 +110,7 @@ Design trade-offs (see source comments): streaming reads with adaptive buffers (
 Prerequisites:
 
 - Go 1.25+, Node.js 20.19+ (required by Vite 7)
-- Wails CLI v3: `go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.9`
+- Wails CLI v3: `go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.25`
 - Optional: MSYS2 MinGW-w64 GCC (only needed for `go test -race`; the exe build itself disables CGO)
 - `wails3 doctor` all green
 

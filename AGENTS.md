@@ -4,7 +4,7 @@
 
 ## 项目概述
 
-**GoHashTool（文件哈希工具 / File Hash Tool）**：Windows 64 位桌面工具，用于文件哈希值的获取与对比。技术栈为 **Wails v3（v3.0.0-beta.9）+ Go + Vue 3 + TypeScript**，产物是单文件 exe（`bin/gohash.exe`）。
+**GoHashTool（文件哈希工具 / File Hash Tool）**：Windows 64 位桌面工具，用于文件哈希值的获取与对比。技术栈为 **Wails v3（v3.0.0-beta.25）+ Go + Vue 3 + TypeScript**，产物是单文件 exe（`bin/gohash.exe`）。
 
 四大功能页：
 
@@ -21,10 +21,10 @@
 
 ## 技术栈与关键配置
 
-- `go.mod` / `go.sum`：Go module 名为 `gohash`，`go 1.25.0`，直接依赖 `github.com/wailsapp/wails/v3 v3.0.0-beta.9` 与 `golang.org/x/sys`（文件关联注册表写入，`x/sys/windows/registry`）。文件末尾有一条**注释掉的 `replace` 指令**（指向开发者本机模块缓存路径），保持注释状态，不要启用。
+- `go.mod` / `go.sum`：Go module 名为 `gohash`，`go 1.25.0`，直接依赖 `github.com/wailsapp/wails/v3 v3.0.0-beta.25` 与 `golang.org/x/sys`（文件关联注册表写入，`x/sys/windows/registry`）。文件末尾有一条**注释掉的 `replace` 指令**（指向开发者本机模块缓存路径），保持注释状态，不要启用。
 - **`Taskfile.yml`（根）+ `build/Taskfile.yml` + `build/windows/Taskfile.yml`**：Wails v3 的构建编排（go-task 内嵌于 wails3 CLI，`wails3 build` 即其封装）。`wails.json` 已于 v3 迁移时删除。
 - `build/config.yml`：项目元数据（`info:` 段生成 exe 版本信息/图标/清单）与 `wails3 dev` 开发模式配置。修改 `info` 后跑 `wails3 task common:update:build-assets` 再生成资产（会覆盖手工修改；`windows/wails.exe.manifest` 中手工加入的 `longPathAware` 行需在再生成后补回）。
-- `frontend/package.json`：依赖 Vue 3.5、Naive UI、vue-i18n、vue-router（hash 模式）、pinia、@vicons/ionicons5、**@wailsio/runtime（与 Go 端同版本 beta.9）**；`npm run build` = `vue-tsc --noEmit && vite build`；`npm run build:dev` 供 wails3 dev 使用；`npm run test` = `vitest run`。无独立 lint 配置。
+- `frontend/package.json`：依赖 Vue 3.5、Naive UI、vue-i18n、vue-router（hash 模式）、pinia、@vicons/ionicons5、**@wailsio/runtime（与 Go 端同版本 beta.25）**；`npm run build` = `vue-tsc --noEmit && vite build`；`npm run build:dev` 供 wails3 dev 使用；`npm run test` = `vitest run`。无独立 lint 配置。
 - `frontend/tsconfig.json`：`strict: true`，`resolveJsonModule: true`（locales 的 JSON 直接 import，api 层也借此取双语文案）。
 - `frontend/vite.config.ts`：仅 `@vitejs/plugin-vue`，无额外配置。
 - `build/`：Wails v3 构建资产（`appicon.png`、`config.yml`、`Taskfile.yml`、`windows/` 下的图标/清单/`info.json`/Taskfile）。`darwin/`、`linux/`、`ios/` 是脚手架默认目录（再生成资产时自动带出），本项目目标平台只有 Windows 64 位。
@@ -33,7 +33,7 @@
 
 ## 构建与开发命令
 
-前置条件：Go 1.25+、Node.js 20.19+（Vite 7 要求）、Wails CLI v3（`go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.9`）。构建 exe 时 **CGO 默认关闭、不需要 GCC**；仅 `go test -race` 需要 MSYS2 MinGW-w64 GCC（UCRT64，`C:\msys64\ucrt64\bin` 在 PATH 中；不要用 TDM-GCC 或 MSYS 环境的 gcc）。`wails3 doctor` 应全部通过。
+前置条件：Go 1.25+、Node.js 20.19+（Vite 7 要求）、Wails CLI v3（`go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.25`）。构建 exe 时 **CGO 默认关闭、不需要 GCC**；仅 `go test -race` 需要 MSYS2 MinGW-w64 GCC（UCRT64，`C:\msys64\ucrt64\bin` 在 PATH 中；不要用 TDM-GCC 或 MSYS 环境的 gcc）。`wails3 doctor` 应全部通过。
 
 ```bash
 # 安装前端依赖
